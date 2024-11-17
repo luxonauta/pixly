@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CustomButton } from "./button";
 import { Card } from "./card";
 import { ColorPicker } from "./color-picker";
@@ -26,11 +26,13 @@ const initialColors: ColorItem[] = [
 ];
 
 const getCustomGridSizes = (): string[] => {
+  if (typeof window === "undefined") return ["8", "16", "32"];
   const savedSizes = localStorage.getItem("customGridSizes");
   return savedSizes ? JSON.parse(savedSizes) : ["8", "16", "32"];
 };
 
 const saveCustomGridSize = (size: number) => {
+  if (typeof window === "undefined") return;
   const sizes = getCustomGridSizes();
   if (!sizes.includes(size.toString())) {
     const updatedSizes = [...sizes, size.toString()];
@@ -39,11 +41,13 @@ const saveCustomGridSize = (size: number) => {
 };
 
 const getCanvasGridSize = (): number => {
+  if (typeof window === "undefined") return 16;
   const savedGridSize = localStorage.getItem("customGridSize");
   return savedGridSize ? Number(savedGridSize) : 16;
 };
 
 const saveCanvasGridSize = (size: number) => {
+  if (typeof window === "undefined") return;
   localStorage.setItem("customGridSize", size.toString());
 };
 
@@ -52,14 +56,54 @@ export const Editor: React.FC = () => {
   const [selectedColor, setSelectedColor] = useState("#000000");
   const [colors, setColors] = useState<ColorItem[]>(initialColors);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [gridSize, setGridSize] = useState(16);
+  const [availableGridSizes, setAvailableGridSizes] = useState<string[]>([]);
+  const [grid, setGrid] = useState<string[][]>([]);
 
-  const gridSize = getCanvasGridSize();
-  const availableGridSizes = getCustomGridSizes();
-  const initialGrid = Array(gridSize)
-    .fill(null)
-    .map(() => Array(gridSize).fill("#FFFFFF"));
+  useEffect(() => {
+    setGridSize(getCanvasGridSize());
+    setAvailableGridSizes(getCustomGridSizes());
+  }, []);
 
-  const [grid, setGrid] = useState<string[][]>(initialGrid);
+  useEffect(() => {
+    setGrid(
+      Array(gridSize)
+        .fill(null)
+        .map(() => Array(gridSize).fill("#FFFFFF"))
+    );
+  }, [gridSize]);
+
+  const handleGridSizeChange = (size: number): void => {
+    saveCanvasGridSize(size);
+    setGridSize(size);
+  };
+
+  const handleCustomGridSizeChange = (): void => {
+    const size = Number.parseInt(customGridSize, 10);
+
+    if (Number.isNaN(size) || size < 8 || size > 64) {
+      alert("Please enter a size between 8 and 64.");
+      return;
+    }
+
+    if (availableGridSizes.includes(size.toString())) {
+      alert(`Grid size ${size}x${size} already exists.`);
+      return;
+    }
+
+    saveCustomGridSize(size);
+    setAvailableGridSizes([...availableGridSizes, size.toString()]);
+    handleGridSizeChange(size);
+    setCustomGridSize("");
+  };
+
+  const handleClear = (): void => {
+    setGrid(
+      Array(gridSize)
+        .fill(null)
+        .map(() => Array(gridSize).fill("#FFFFFF"))
+    );
+  };
 
   const handleCellClick = (rowIndex: number, colIndex: number): void => {
     const newGrid = grid.map((row, i) =>
@@ -83,41 +127,6 @@ export const Editor: React.FC = () => {
 
   const handleMouseUp = (): void => {
     setIsDrawing(false);
-  };
-
-  const handleClear = (): void => {
-    setGrid(
-      Array(gridSize)
-        .fill(null)
-        .map(() => Array(gridSize).fill("#FFFFFF"))
-    );
-  };
-
-  const handleGridSizeChange = (size: number): void => {
-    saveCanvasGridSize(size);
-    setGrid(
-      Array(size)
-        .fill(null)
-        .map(() => Array(size).fill("#FFFFFF"))
-    );
-  };
-
-  const handleCustomGridSizeChange = (): void => {
-    const size = Number.parseInt(customGridSize, 10);
-
-    if (Number.isNaN(size) || size < 8 || size > 64) {
-      alert("Please enter a size between 8 and 64.");
-      return;
-    }
-
-    if (availableGridSizes.includes(size.toString())) {
-      alert(`Grid size ${size}x${size} already exists.`);
-      return;
-    }
-
-    saveCustomGridSize(size);
-    handleGridSizeChange(size);
-    setCustomGridSize("");
   };
 
   const handleColorSelect = (color: string): void => {
