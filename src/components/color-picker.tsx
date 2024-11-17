@@ -1,140 +1,257 @@
-import { XMarkIcon } from "@heroicons/react/20/solid";
+import { MenuItem } from "@headlessui/react";
 import type React from "react";
-import { useState } from "react";
-import type { RGBColor } from "@/types/rgb-color";
-import { convertHexToRGB } from "@/utils/convert-hex-to-rgb";
-import { convertRGBToHex } from "@/utils/convert-rgb-to-hex";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { HSV } from "@/types";
+import { convertHsvToRgb } from "@/utils/convert-hsv-to-rgb";
+import {
+  getFormattedColorWithAlpha,
+  getFormattedSolidColor
+} from "@/utils/get-formatted-colors";
+import { CustomButton } from "./button";
+import { DropdownMenu } from "./dropdown-menu";
 
 interface ColorPickerProps {
-  isOpen: boolean;
-  onClose: () => void;
+  trigger: React.ReactNode;
   onColorSelect: (color: string) => void;
 }
 
 export const ColorPicker: React.FC<ColorPickerProps> = ({
-  isOpen,
-  onClose,
+  trigger,
   onColorSelect
 }) => {
-  const [rgbColor, setRgbColor] = useState<RGBColor>({
-    red: 0,
-    green: 0,
-    blue: 0,
-    alpha: 1
+  const [selectedColor, setSelectedColor] = useState<HSV>({
+    hue: 0,
+    saturation: 100,
+    value: 100,
+    alpha: 100
   });
+  const [isDragging, setIsDragging] = useState(false);
+  const [isHueDragging, setIsHueDragging] = useState(false);
+  const [isAlphaDragging, setIsAlphaDragging] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
+  const hueRef = useRef<HTMLDivElement>(null);
+  const alphaRef = useRef<HTMLDivElement>(null);
 
-  const [hexColor, setHexColor] = useState<string>("#000000FF");
-
-  const updateRGBColor = (channel: keyof RGBColor, value: string) => {
-    const updatedColor = {
-      ...rgbColor,
-      [channel]:
-        channel === "alpha"
-          ? Number.parseFloat(value)
-          : Number.parseInt(value, 10)
-    };
-    setRgbColor(updatedColor);
-    setHexColor(
-      convertRGBToHex(
-        updatedColor.red,
-        updatedColor.green,
-        updatedColor.blue,
-        updatedColor.alpha
-      )
-    );
+  const handlePickerMouseDown = (e: React.MouseEvent) => {
+    if (!pickerRef.current) return;
+    setIsDragging(true);
+    const rect = pickerRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+    setSelectedColor((prev) => ({
+      ...prev,
+      saturation: Math.round(x * 100),
+      value: Math.round((1 - y) * 100)
+    }));
   };
 
-  const updateHexColor = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newHex = event.target.value;
-    setHexColor(newHex);
-    const rgbFromHex = convertHexToRGB(newHex);
-    if (rgbFromHex) {
-      setRgbColor(rgbFromHex);
+  const handlePickerMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isDragging || !pickerRef.current) return;
+      const rect = pickerRef.current.getBoundingClientRect();
+      const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+      setSelectedColor((prev) => ({
+        ...prev,
+        saturation: Math.round(x * 100),
+        value: Math.round((1 - y) * 100)
+      }));
+    },
+    [isDragging]
+  );
+
+  const handleHueMouseDown = (e: React.MouseEvent) => {
+    if (!hueRef.current) return;
+    setIsHueDragging(true);
+    const rect = hueRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    setSelectedColor((prev) => ({
+      ...prev,
+      hue: Math.round(x * 360)
+    }));
+  };
+
+  const handleHueMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isHueDragging || !hueRef.current) return;
+      const rect = hueRef.current.getBoundingClientRect();
+      const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      setSelectedColor((prev) => ({
+        ...prev,
+        hue: Math.round(x * 360)
+      }));
+    },
+    [isHueDragging]
+  );
+
+  const handleAlphaMouseDown = (e: React.MouseEvent) => {
+    if (!alphaRef.current) return;
+    setIsAlphaDragging(true);
+    const rect = alphaRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    setSelectedColor((prev) => ({
+      ...prev,
+      alpha: Math.round(x * 100)
+    }));
+  };
+
+  const handleAlphaMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isAlphaDragging || !alphaRef.current) return;
+      const rect = alphaRef.current.getBoundingClientRect();
+      const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      setSelectedColor((prev) => ({
+        ...prev,
+        alpha: Math.round(x * 100)
+      }));
+    },
+    [isAlphaDragging]
+  );
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+    setIsHueDragging(false);
+    setIsAlphaDragging(false);
+  }, []);
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener("mousemove", handlePickerMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+      return () => {
+        window.removeEventListener("mousemove", handlePickerMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
+      };
     }
-  };
+  }, [isDragging, handlePickerMouseMove, handleMouseUp]);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (isHueDragging) {
+      window.addEventListener("mousemove", handleHueMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+      return () => {
+        window.removeEventListener("mousemove", handleHueMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
+      };
+    }
+  }, [isHueDragging, handleHueMouseMove, handleMouseUp]);
+
+  useEffect(() => {
+    if (isAlphaDragging) {
+      window.addEventListener("mousemove", handleAlphaMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+      return () => {
+        window.removeEventListener("mousemove", handleAlphaMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
+      };
+    }
+  }, [isAlphaDragging, handleAlphaMouseMove, handleMouseUp]);
+
+  const baseColor = convertHsvToRgb(selectedColor.hue / 360, 100, 100);
+  const baseColorString = `rgb(${baseColor.red}, ${baseColor.green}, ${baseColor.blue})`;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/50">
-      <div className="w-96 rounded-lg bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b p-4">
-          <h3 className="text-lg font-semibold">Color Picker</h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full p-1 transition-colors hover:bg-gray-100"
-          >
-            <XMarkIcon className="h-5 w-5" />
-          </button>
-        </div>
-        <div className="space-y-4 p-4">
-          {["red", "green", "blue", "alpha"].map((channel) => (
-            <div key={channel} className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                {channel.toUpperCase()}
-              </label>
-              <div className="flex items-center gap-4">
-                <input
-                  type="range"
-                  min="0"
-                  max={channel === "alpha" ? "1" : "255"}
-                  step={channel === "alpha" ? "0.01" : "1"}
-                  value={rgbColor[channel as keyof RGBColor].toString()}
-                  onChange={(e) =>
-                    updateRGBColor(channel as keyof RGBColor, e.target.value)
-                  }
-                  className="h-2 flex-1 cursor-pointer appearance-none rounded-lg bg-gray-200"
-                />
-                <input
-                  type="number"
-                  min="0"
-                  max={channel === "alpha" ? "1" : "255"}
-                  step={channel === "alpha" ? "0.01" : "1"}
-                  value={rgbColor[channel as keyof RGBColor].toString()}
-                  onChange={(e) =>
-                    updateRGBColor(channel as keyof RGBColor, e.target.value)
-                  }
-                  className="w-16 rounded-md border px-2 py-1 text-sm"
-                />
-              </div>
-            </div>
-          ))}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Hexadecimal
-            </label>
-            <input
-              type="text"
-              value={hexColor}
-              onChange={updateHexColor}
-              className="w-full rounded-md border px-3 py-2"
-            />
-          </div>
+    <DropdownMenu trigger={trigger}>
+      <div className="flex w-48 flex-col gap-2">
+        <div
+          ref={pickerRef}
+          className="relative h-48 w-full cursor-crosshair rounded"
+          style={{
+            backgroundColor: baseColorString,
+            backgroundImage:
+              "linear-gradient(to right, #fff, transparent), linear-gradient(to top, #000, transparent)"
+          }}
+          onMouseDown={handlePickerMouseDown}
+        >
           <div
-            className="h-24 rounded-md border"
+            className="absolute h-4 w-4 -translate-x-2 -translate-y-2 rounded-full border-2 border-white"
             style={{
-              backgroundColor: `rgba(${rgbColor.red}, ${rgbColor.green}, ${rgbColor.blue}, ${rgbColor.alpha})`
+              left: `${selectedColor.saturation}%`,
+              top: `${100 - selectedColor.value}%`,
+              backgroundColor: getFormattedColorWithAlpha(
+                selectedColor.hue,
+                selectedColor.saturation,
+                selectedColor.value,
+                selectedColor.alpha
+              )
             }}
           />
-          <div className="flex justify-end gap-3 border-t pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={() => onColorSelect(hexColor)}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-            >
-              Select
-            </button>
-          </div>
         </div>
+        <div className="mt-2 flex w-full items-stretch gap-4">
+          <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+            <div
+              ref={hueRef}
+              className="relative h-3 cursor-pointer rounded-full bg-[#EBEBE6]"
+              style={{
+                backgroundImage:
+                  "linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%)"
+              }}
+              onMouseDown={handleHueMouseDown}
+            >
+              <div
+                className="absolute top-1/2 h-4 w-4 -translate-x-2 -translate-y-1/2 rounded-full border-2 border-white"
+                style={{
+                  left: `${(selectedColor.hue / 360) * 100}%`,
+                  backgroundColor: baseColorString
+                }}
+              />
+            </div>
+            <div
+              ref={alphaRef}
+              className="relative h-3 cursor-pointer rounded-full bg-[#EBEBE6]"
+              style={{
+                backgroundImage: `linear-gradient(to right, transparent, ${getFormattedSolidColor(
+                  selectedColor.hue,
+                  selectedColor.saturation,
+                  selectedColor.value
+                )})`
+              }}
+              onMouseDown={handleAlphaMouseDown}
+            >
+              <div
+                className="absolute top-1/2 h-4 w-4 -translate-x-2 -translate-y-1/2 rounded-full border-2 border-white"
+                style={{
+                  left: `${selectedColor.alpha}%`,
+                  backgroundColor: getFormattedColorWithAlpha(
+                    selectedColor.hue,
+                    selectedColor.saturation,
+                    selectedColor.value,
+                    selectedColor.alpha
+                  )
+                }}
+              />
+            </div>
+          </div>
+          <div
+            className="h-10 w-10 rounded"
+            style={{
+              backgroundColor: getFormattedColorWithAlpha(
+                selectedColor.hue,
+                selectedColor.saturation,
+                selectedColor.value,
+                selectedColor.alpha
+              )
+            }}
+          />
+        </div>
+        <MenuItem>
+          <CustomButton
+            label="Add color"
+            type="button"
+            onClick={() =>
+              onColorSelect(
+                getFormattedColorWithAlpha(
+                  selectedColor.hue,
+                  selectedColor.saturation,
+                  selectedColor.value,
+                  selectedColor.alpha
+                )
+              )
+            }
+            className="mt-1 w-full justify-center"
+          />
+        </MenuItem>
       </div>
-    </div>
+    </DropdownMenu>
   );
 };

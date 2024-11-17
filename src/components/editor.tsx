@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { CustomButton } from "./button";
 import { Card } from "./card";
 import { ColorPicker } from "./color-picker";
@@ -25,33 +25,41 @@ const initialColors: ColorItem[] = [
   { id: "color-8", value: "#FFFF57" }
 ];
 
+const getCustomGridSizes = (): string[] => {
+  const savedSizes = localStorage.getItem("customGridSizes");
+  return savedSizes ? JSON.parse(savedSizes) : ["8", "16", "32"];
+};
+
+const saveCustomGridSize = (size: number) => {
+  const sizes = getCustomGridSizes();
+  if (!sizes.includes(size.toString())) {
+    const updatedSizes = [...sizes, size.toString()];
+    localStorage.setItem("customGridSizes", JSON.stringify(updatedSizes));
+  }
+};
+
+const getCanvasGridSize = (): number => {
+  const savedGridSize = localStorage.getItem("customGridSize");
+  return savedGridSize ? Number(savedGridSize) : 16;
+};
+
+const saveCanvasGridSize = (size: number) => {
+  localStorage.setItem("customGridSize", size.toString());
+};
+
 export const Editor: React.FC = () => {
-  const [gridSize, setGridSize] = useState(16);
   const [customGridSize, setCustomGridSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("#000000");
-  const [grid, setGrid] = useState<string[][]>(
-    Array(16)
-      .fill(null)
-      .map(() => Array(16).fill("#FFFFFF"))
-  );
   const [colors, setColors] = useState<ColorItem[]>(initialColors);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
 
-  useEffect(() => {
-    const savedGridSize = localStorage.getItem("customGridSize");
-    if (savedGridSize) {
-      const size = Number(savedGridSize);
-      if (size >= 8 && size <= 64) {
-        setGridSize(size);
-        setGrid(
-          Array(size)
-            .fill(null)
-            .map(() => Array(size).fill("#FFFFFF"))
-        );
-      }
-    }
-  }, []);
+  const gridSize = getCanvasGridSize();
+  const availableGridSizes = getCustomGridSizes();
+  const initialGrid = Array(gridSize)
+    .fill(null)
+    .map(() => Array(gridSize).fill("#FFFFFF"));
+
+  const [grid, setGrid] = useState<string[][]>(initialGrid);
 
   const handleCellClick = (rowIndex: number, colIndex: number): void => {
     const newGrid = grid.map((row, i) =>
@@ -86,23 +94,30 @@ export const Editor: React.FC = () => {
   };
 
   const handleGridSizeChange = (size: number): void => {
-    setGridSize(size);
+    saveCanvasGridSize(size);
     setGrid(
       Array(size)
         .fill(null)
         .map(() => Array(size).fill("#FFFFFF"))
     );
-    localStorage.setItem("customGridSize", size.toString());
   };
 
   const handleCustomGridSizeChange = (): void => {
     const size = Number.parseInt(customGridSize, 10);
-    if (size >= 8 && size <= 64) {
-      handleGridSizeChange(size);
-      setCustomGridSize("");
-    } else {
+
+    if (Number.isNaN(size) || size < 8 || size > 64) {
       alert("Please enter a size between 8 and 64.");
+      return;
     }
+
+    if (availableGridSizes.includes(size.toString())) {
+      alert(`Grid size ${size}x${size} already exists.`);
+      return;
+    }
+
+    saveCustomGridSize(size);
+    handleGridSizeChange(size);
+    setCustomGridSize("");
   };
 
   const handleColorSelect = (color: string): void => {
@@ -112,7 +127,6 @@ export const Editor: React.FC = () => {
     };
     setColors((prevColors) => [...prevColors, newColor]);
     setSelectedColor(color);
-    setIsColorPickerOpen(false);
   };
 
   return (
@@ -124,12 +138,10 @@ export const Editor: React.FC = () => {
         >
           <CustomSelect
             label="Canvas size"
-            options={[
-              { value: "8", label: "8x8" },
-              { value: "16", label: "16x16" },
-              { value: "32", label: "32x32" },
-              { value: gridSize.toString(), label: `${gridSize}x${gridSize}` }
-            ]}
+            options={availableGridSizes.map((size) => ({
+              value: size,
+              label: `${size}x${size}`
+            }))}
             className="mt-2"
             onChange={(value) => handleGridSizeChange(Number(value))}
           />
@@ -177,19 +189,15 @@ export const Editor: React.FC = () => {
                 />
               </label>
             ))}
-            <button
-              type="button"
-              onClick={() => setIsColorPickerOpen(true)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 bg-white text-xl shadow-sm transition-transform hover:scale-110 hover:bg-gray-50"
-            >
-              +
-            </button>
+            <ColorPicker
+              trigger={
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 bg-white text-xl shadow-sm transition-transform hover:scale-110 hover:bg-gray-50">
+                  +
+                </div>
+              }
+              onColorSelect={handleColorSelect}
+            />
           </div>
-          <ColorPicker
-            isOpen={isColorPickerOpen}
-            onClose={() => setIsColorPickerOpen(false)}
-            onColorSelect={handleColorSelect}
-          />
         </Card>
       </div>
       <div className="min-w-0 flex-1">
