@@ -21,7 +21,7 @@ export const CustomSelect = ({
       <div className="relative">
         <Select
           className={cn(
-            "block w-full appearance-none rounded-lg border-none bg-[#EBEBE6] px-3 py-2",
+            "block w-full appearance-none rounded-md border-none bg-[#EBEBE6] px-3 py-2",
             "focus:outline-none data-[focus]:outline-2 data-[focus]:-outline-offset-2 data-[focus]:outline-black/25",
             "*:text-black"
           )}

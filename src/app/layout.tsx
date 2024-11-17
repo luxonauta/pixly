@@ -15,8 +15,8 @@ export const metadata: Metadata = {
 
 const RootLayout = ({ children }: Readonly<{ children: React.ReactNode }>) => (
   <html lang="en" className={inter.variable}>
-    <body className="flex min-h-[100vh] items-center justify-center bg-[#C03440] font-sans text-xs antialiased">
-      <main className="m-6 max-w-[calc(100%-1.5rem)] rounded-3xl bg-[#EBEBE6] p-3 text-[#171717] shadow-xl md:w-[64rem] lg:aspect-video">
+    <body className="flex min-h-[100vh] items-center justify-center bg-[#171717] font-sans text-xs antialiased">
+      <main className="m-6 max-w-[calc(100%-1.5rem)] rounded-xl bg-[#EBEBE6] p-3 text-[#171717] shadow-xl md:w-[64rem] lg:aspect-video">
         {children}
       </main>
     </body>

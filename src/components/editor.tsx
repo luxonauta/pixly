@@ -8,6 +8,7 @@ import { ColorPicker } from "./color-picker";
 import { Grid } from "./grid";
 import { CustomInput } from "./input";
 import { CustomSelect } from "./select";
+import { PlusIcon, TrashIcon } from "@heroicons/react/20/solid";
 
 interface ColorItem {
   id: string;
@@ -140,7 +141,7 @@ export const Editor: React.FC = () => {
 
   return (
     <div className="flex w-full flex-col gap-3 md:flex-row">
-      <div className="flex w-[22rem] max-w-full flex-col gap-2">
+      <div className="flex w-80 max-w-full flex-col gap-2">
         <Card
           title="Canvas size"
           description="Choose from a predefined size or create your own."
@@ -163,11 +164,13 @@ export const Editor: React.FC = () => {
           />
           <div className="relative mt-2 flex gap-2">
             <CustomButton
+              icon={<PlusIcon className="h-3.5 w-3.5" strokeWidth={3} />}
               label="Apply"
               type="button"
               onClick={handleCustomGridSizeChange}
             />
             <CustomButton
+              icon={<TrashIcon className="h-3.5 w-3.5" strokeWidth={3} />}
               label="Clear canvas"
               type="button"
               onClick={handleClear}
@@ -178,7 +181,7 @@ export const Editor: React.FC = () => {
           title="Color palette"
           description="Select a color from the palette or add a new one."
         >
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap gap-2.5">
             {colors.map((color) => (
               <label key={color.id} className="relative">
                 <input
@@ -191,7 +194,7 @@ export const Editor: React.FC = () => {
                 />
                 <span
                   style={{ backgroundColor: color.value }}
-                  className={`block h-8 w-8 cursor-pointer rounded-lg border border-transparent shadow-sm transition-transform hover:scale-105 focus:outline-none active:scale-100 ${
+                  className={`block h-8 w-8 cursor-pointer rounded-md border border-transparent shadow-sm transition-transform hover:scale-105 focus:outline-none active:scale-100 ${
                     selectedColor === color.value &&
                     "border-black/20 ring-2 ring-[#171717] ring-offset-2 ring-offset-white/90"
                   }`}
@@ -200,8 +203,8 @@ export const Editor: React.FC = () => {
             ))}
             <ColorPicker
               trigger={
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 bg-white text-xl shadow-sm transition-transform hover:scale-110 hover:bg-gray-50">
-                  +
+                <div className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-transparent bg-white shadow-sm transition-transform hover:scale-105 focus:outline-none active:scale-100">
+                  <PlusIcon className="h-3.5 w-3.5" strokeWidth={3} />
                 </div>
               }
               onColorSelect={handleColorSelect}
