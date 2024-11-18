@@ -3,6 +3,7 @@
 import { PlusIcon, TrashIcon } from "@heroicons/react/20/solid";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { Alert } from "./alert";
 import { CustomButton } from "./button";
 import { Card } from "./card";
 import { ColorPicker } from "./color-picker";
@@ -17,7 +18,7 @@ interface ColorItem {
 
 const initialColors: ColorItem[] = [
   { id: "color-1", value: "#000000" },
-  { id: "color-2", value: "#ffffff" },
+  { id: "color-2", value: "#FFFFFF" },
   { id: "color-3", value: "#0090FF" },
   { id: "color-4", value: "#AD7F58" },
   { id: "color-5", value: "#30A46C" },
@@ -29,14 +30,16 @@ const initialColors: ColorItem[] = [
 const getCustomGridSizes = (): string[] => {
   if (typeof window === "undefined") return ["8", "16", "32"];
   const savedSizes = localStorage.getItem("customGridSizes");
-  const sizes = savedSizes ? JSON.parse(savedSizes) : ["8", "16", "32"];
-  return sizes.sort((a: string, b: string) => Number(a) - Number(b));
+  return savedSizes
+    ? JSON.parse(savedSizes).sort(
+        (a: string, b: string) => Number(a) - Number(b)
+      )
+    : ["8", "16", "32"];
 };
 
-const saveCustomGridSize = (size: number) => {
+const saveCustomGridSize = (size: number): void => {
   if (typeof window === "undefined") return;
   const sizes = getCustomGridSizes();
-
   if (!sizes.includes(size.toString())) {
     const updatedSizes = [...sizes, size.toString()].sort(
       (a, b) => Number(a) - Number(b)
@@ -51,7 +54,7 @@ const getCanvasGridSize = (): number => {
   return savedGridSize ? Number(savedGridSize) : 16;
 };
 
-const saveCanvasGridSize = (size: number) => {
+const saveCanvasGridSize = (size: number): void => {
   if (typeof window === "undefined") return;
   localStorage.setItem("customGridSize", size.toString());
 };
@@ -64,6 +67,8 @@ export const Editor: React.FC = () => {
   const [gridSize, setGridSize] = useState(16);
   const [availableGridSizes, setAvailableGridSizes] = useState<string[]>([]);
   const [grid, setGrid] = useState<string[][]>([]);
+  const [alertTitle, setAlertTitle] = useState("Error");
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setGridSize(getCanvasGridSize());
@@ -85,22 +90,22 @@ export const Editor: React.FC = () => {
 
   const handleCustomGridSizeChange = (): void => {
     const size = Number.parseInt(customGridSize, 10);
-
     if (Number.isNaN(size) || size < 8 || size > 64) {
-      alert("Please enter a size between 8 and 64.");
+      setAlertTitle("Invalid size input");
+      setAlertMessage("Please enter a valid size between 8 and 64.");
       return;
     }
-
     if (availableGridSizes.includes(size.toString())) {
-      alert(`Grid size ${size}x${size} already exists.`);
+      setAlertTitle("Duplicate grid size");
+      setAlertMessage(`The canvas size ${size}x${size} already exists.`);
       return;
     }
-
     saveCustomGridSize(size);
-    const newSizes = [...availableGridSizes, size.toString()].sort(
-      (a, b) => Number(a) - Number(b)
+    setAvailableGridSizes(
+      [...availableGridSizes, size.toString()].sort(
+        (a, b) => Number(a) - Number(b)
+      )
     );
-    setAvailableGridSizes(newSizes);
     handleGridSizeChange(size);
     setCustomGridSize("");
   };
@@ -128,14 +133,10 @@ export const Editor: React.FC = () => {
   };
 
   const handleMouseEnter = (rowIndex: number, colIndex: number): void => {
-    if (isDrawing) {
-      handleCellClick(rowIndex, colIndex);
-    }
+    if (isDrawing) handleCellClick(rowIndex, colIndex);
   };
 
-  const handleMouseUp = (): void => {
-    setIsDrawing(false);
-  };
+  const handleMouseUp = (): void => setIsDrawing(false);
 
   const handleColorSelect = (color: string): void => {
     const newColor: ColorItem = {
@@ -147,88 +148,98 @@ export const Editor: React.FC = () => {
   };
 
   return (
-    <div className="flex w-full flex-col gap-3 md:flex-row">
-      <div className="flex w-80 max-w-full flex-col gap-2">
-        <Card
-          title="Canvas size"
-          description="Choose from a predefined size or create your own."
-        >
-          <CustomSelect
-            label="Canvas size"
-            options={availableGridSizes.map((size) => ({
-              value: size,
-              label: `${size}x${size}`
-            }))}
-            value={gridSize.toString()}
-            className="mt-2"
-            onChange={(value) => handleGridSizeChange(Number(value))}
+    <>
+      <div className="flex w-full flex-col gap-3 md:flex-row">
+        <div className="flex w-80 max-w-full flex-col gap-2">
+          <Card
+            title="Canvas size"
+            description="Select a predefined canvas size or define a custom size to suit your needs."
+          >
+            <CustomSelect
+              label="Canvas size"
+              options={availableGridSizes.map((size) => ({
+                value: size,
+                label: `${size}x${size}`
+              }))}
+              value={gridSize.toString()}
+              className="mt-2"
+              onChange={(value) => handleGridSizeChange(Number(value))}
+            />
+            <CustomInput
+              type="number"
+              label="Custom size"
+              value={customGridSize}
+              onChange={(e) => setCustomGridSize(e.target.value)}
+              placeholder="Custom size (8-64)"
+            />
+            <div className="relative mt-2 flex gap-2">
+              <CustomButton
+                icon={<PlusIcon className="h-3.5 w-3.5" strokeWidth={3} />}
+                label="Apply custom size"
+                type="button"
+                onClick={handleCustomGridSizeChange}
+              />
+              <CustomButton
+                icon={<TrashIcon className="h-3.5 w-3.5" strokeWidth={3} />}
+                label="Reset canvas"
+                type="button"
+                onClick={handleClear}
+              />
+            </div>
+          </Card>
+          <Card
+            title="Color palette"
+            description="Choose a color from the palette or add a custom color to personalize your drawing."
+          >
+            <div className="mt-3 flex flex-wrap gap-2.5">
+              {colors.map((color) => (
+                <label key={color.id} className="relative">
+                  <input
+                    type="radio"
+                    name="colorPicker"
+                    value={color.value}
+                    checked={selectedColor === color.value}
+                    onChange={() => setSelectedColor(color.value)}
+                    className="absolute h-0 w-0 opacity-0"
+                  />
+                  <span
+                    style={{ backgroundColor: color.value }}
+                    className={`block h-8 w-8 cursor-pointer rounded-md border border-transparent shadow-sm transition-transform hover:scale-105 focus:outline-none active:scale-100 ${
+                      selectedColor === color.value &&
+                      "border-black/20 ring-2 ring-[#171717] ring-offset-2 ring-offset-white/90"
+                    }`}
+                  />
+                </label>
+              ))}
+              <ColorPicker
+                trigger={
+                  <div className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-transparent bg-white shadow-sm transition-transform hover:scale-105 focus:outline-none active:scale-100">
+                    <PlusIcon className="h-3.5 w-3.5" strokeWidth={3} />
+                  </div>
+                }
+                onColorSelect={handleColorSelect}
+              />
+            </div>
+          </Card>
+        </div>
+        <div className="min-w-0 flex-1">
+          <Grid
+            gridSize={gridSize}
+            grid={grid}
+            onMouseDown={handleMouseDown}
+            onMouseEnter={handleMouseEnter}
+            onMouseUp={handleMouseUp}
           />
-          <CustomInput
-            type="number"
-            label="Custom size"
-            value={customGridSize}
-            onChange={(e) => setCustomGridSize(e.target.value)}
-            placeholder="Custom size (8-64)"
-          />
-          <div className="relative mt-2 flex gap-2">
-            <CustomButton
-              icon={<PlusIcon className="h-3.5 w-3.5" strokeWidth={3} />}
-              label="Apply"
-              type="button"
-              onClick={handleCustomGridSizeChange}
-            />
-            <CustomButton
-              icon={<TrashIcon className="h-3.5 w-3.5" strokeWidth={3} />}
-              label="Clear canvas"
-              type="button"
-              onClick={handleClear}
-            />
-          </div>
-        </Card>
-        <Card
-          title="Color palette"
-          description="Select a color from the palette or add a new one."
-        >
-          <div className="mt-3 flex flex-wrap gap-2.5">
-            {colors.map((color) => (
-              <label key={color.id} className="relative">
-                <input
-                  type="radio"
-                  name="colorPicker"
-                  value={color.value}
-                  checked={selectedColor === color.value}
-                  onChange={() => setSelectedColor(color.value)}
-                  className="absolute h-0 w-0 opacity-0"
-                />
-                <span
-                  style={{ backgroundColor: color.value }}
-                  className={`block h-8 w-8 cursor-pointer rounded-md border border-transparent shadow-sm transition-transform hover:scale-105 focus:outline-none active:scale-100 ${
-                    selectedColor === color.value &&
-                    "border-black/20 ring-2 ring-[#171717] ring-offset-2 ring-offset-white/90"
-                  }`}
-                />
-              </label>
-            ))}
-            <ColorPicker
-              trigger={
-                <div className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-transparent bg-white shadow-sm transition-transform hover:scale-105 focus:outline-none active:scale-100">
-                  <PlusIcon className="h-3.5 w-3.5" strokeWidth={3} />
-                </div>
-              }
-              onColorSelect={handleColorSelect}
-            />
-          </div>
-        </Card>
+        </div>
       </div>
-      <div className="min-w-0 flex-1">
-        <Grid
-          gridSize={gridSize}
-          grid={grid}
-          onMouseDown={handleMouseDown}
-          onMouseEnter={handleMouseEnter}
-          onMouseUp={handleMouseUp}
+      {alertMessage && (
+        <Alert
+          title={alertTitle}
+          message={alertMessage}
+          isOpen={!!alertMessage}
+          onClose={() => setAlertMessage(null)}
         />
-      </div>
-    </div>
+      )}
+    </>
   );
 };
