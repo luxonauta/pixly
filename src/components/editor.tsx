@@ -9,11 +9,18 @@ import { Card } from "./card";
 import { ColorPicker } from "./color-picker";
 import { Grid } from "./grid";
 import { CustomInput } from "./input";
+import { LayerManager } from "./layer-manager";
 import { CustomSelect } from "./select";
 
 interface ColorItem {
   id: string;
   value: string;
+}
+
+interface Layer {
+  id: string;
+  visible: boolean;
+  grid: string[][];
 }
 
 const initialColors: ColorItem[] = [
@@ -66,9 +73,10 @@ export const Editor: React.FC = () => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [gridSize, setGridSize] = useState(16);
   const [availableGridSizes, setAvailableGridSizes] = useState<string[]>([]);
-  const [grid, setGrid] = useState<string[][]>([]);
   const [alertTitle, setAlertTitle] = useState("Error");
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [layers, setLayers] = useState<Layer[]>([]);
+  const [activeLayerId, setActiveLayerId] = useState<string>("");
 
   useEffect(() => {
     setGridSize(getCanvasGridSize());
@@ -76,12 +84,54 @@ export const Editor: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    setGrid(
-      Array(gridSize)
+    const initialLayer: Layer = {
+      id: "layer-1",
+      visible: true,
+      grid: Array(gridSize)
         .fill(null)
         .map(() => Array(gridSize).fill("#FFFFFF"))
-    );
+    };
+    setLayers([initialLayer]);
+    setActiveLayerId(initialLayer.id);
   }, [gridSize]);
+
+  const handleLayerAdd = () => {
+    const newLayer: Layer = {
+      id: `layer-${layers.length + 1}`,
+      visible: true,
+      grid: Array(gridSize)
+        .fill(null)
+        .map(() => Array(gridSize).fill("#FFFFFF"))
+    };
+    setLayers([...layers, newLayer]);
+    setActiveLayerId(newLayer.id);
+  };
+
+  const handleLayerDelete = (id: string) => {
+    if (layers.length === 1) {
+      setAlertTitle("Cannot delete layer");
+      setAlertMessage("You must have at least one layer.");
+      return;
+    }
+    const newLayers = layers.filter((layer) => layer.id !== id);
+    setLayers(newLayers);
+    if (activeLayerId === id) setActiveLayerId(newLayers[0].id);
+  };
+
+  const handleLayerVisibilityToggle = (id: string) => {
+    setLayers((currentLayers) =>
+      currentLayers.map((layer) =>
+        layer.id === id ? { ...layer, visible: !layer.visible } : layer
+      )
+    );
+  };
+
+  const handleLayerReorder = (oldIndex: number, newIndex: number) => {
+    const newLayers = [...layers];
+    const [movedLayer] = newLayers.splice(oldIndex, 1);
+    newLayers.splice(newIndex, 0, movedLayer);
+    setLayers(newLayers);
+  };
 
   const handleGridSizeChange = (size: number): void => {
     saveCanvasGridSize(size);
@@ -110,23 +160,6 @@ export const Editor: React.FC = () => {
     setCustomGridSize("");
   };
 
-  const handleClear = (): void => {
-    setGrid(
-      Array(gridSize)
-        .fill(null)
-        .map(() => Array(gridSize).fill("#FFFFFF"))
-    );
-  };
-
-  const handleCellClick = (rowIndex: number, colIndex: number): void => {
-    const newGrid = grid.map((row, i) =>
-      i === rowIndex
-        ? [...row.slice(0, colIndex), selectedColor, ...row.slice(colIndex + 1)]
-        : row
-    );
-    setGrid(newGrid);
-  };
-
   const handleMouseDown = (rowIndex: number, colIndex: number): void => {
     setIsDrawing(true);
     handleCellClick(rowIndex, colIndex);
@@ -138,6 +171,45 @@ export const Editor: React.FC = () => {
 
   const handleMouseUp = (): void => setIsDrawing(false);
 
+  const handleCellClick = (rowIndex: number, colIndex: number) => {
+    setLayers((currentLayers) =>
+      currentLayers.map((layer) =>
+        layer.id === activeLayerId
+          ? {
+              ...layer,
+              grid: layer.grid.map((row, i) =>
+                i === rowIndex
+                  ? [
+                      ...row.slice(0, colIndex),
+                      selectedColor,
+                      ...row.slice(colIndex + 1)
+                    ]
+                  : row
+              )
+            }
+          : layer
+      )
+    );
+  };
+
+  const getMergedGrid = (): string[][] => {
+    const mergedGrid = Array(gridSize)
+      .fill(null)
+      .map(() => Array(gridSize).fill("#FFFFFF"));
+
+    for (const layer of [...layers].reverse()) {
+      if (!layer.visible) continue;
+      for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+          if (layer.grid[i][j] !== "#FFFFFF") {
+            mergedGrid[i][j] = layer.grid[i][j];
+          }
+        }
+      }
+    }
+    return mergedGrid;
+  };
+
   const handleColorSelect = (color: string): void => {
     const newColor: ColorItem = {
       id: `color-${colors.length + 1}`,
@@ -145,6 +217,17 @@ export const Editor: React.FC = () => {
     };
     setColors((prevColors) => [...prevColors, newColor]);
     setSelectedColor(color);
+  };
+
+  const handleClear = (): void => {
+    setLayers((currentLayers) =>
+      currentLayers.map((layer) => ({
+        ...layer,
+        grid: Array(gridSize)
+          .fill(null)
+          .map(() => Array(gridSize).fill("#FFFFFF"))
+      }))
+    );
   };
 
   return (
@@ -221,11 +304,20 @@ export const Editor: React.FC = () => {
               />
             </div>
           </Card>
+          <LayerManager
+            layers={layers}
+            activeLayerId={activeLayerId}
+            onLayerAdd={handleLayerAdd}
+            onLayerDelete={handleLayerDelete}
+            onLayerVisibilityToggle={handleLayerVisibilityToggle}
+            onLayerReorder={handleLayerReorder}
+            onActiveLayerChange={setActiveLayerId}
+          />
         </div>
         <div className="min-w-0 flex-1">
           <Grid
             gridSize={gridSize}
-            grid={grid}
+            grid={getMergedGrid()}
             onMouseDown={handleMouseDown}
             onMouseEnter={handleMouseEnter}
             onMouseUp={handleMouseUp}
