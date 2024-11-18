@@ -1,14 +1,14 @@
 interface EditorGridProps {
-  gridSize: number;
   grid: string[][];
+  gridSize: number;
   onMouseDown: (rowIndex: number, colIndex: number) => void;
   onMouseEnter: (rowIndex: number, colIndex: number) => void;
   onMouseUp: () => void;
 }
 
 export const Grid: React.FC<EditorGridProps> = ({
-  gridSize,
   grid,
+  gridSize,
   onMouseDown,
   onMouseEnter,
   onMouseUp

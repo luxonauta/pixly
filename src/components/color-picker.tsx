@@ -25,9 +25,11 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
     value: 100,
     alpha: 100
   });
+
   const [isDragging, setIsDragging] = useState(false);
   const [isHueDragging, setIsHueDragging] = useState(false);
   const [isAlphaDragging, setIsAlphaDragging] = useState(false);
+
   const pickerRef = useRef<HTMLDivElement>(null);
   const hueRef = useRef<HTMLDivElement>(null);
   const alphaRef = useRef<HTMLDivElement>(null);

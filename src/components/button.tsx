@@ -3,15 +3,15 @@ import { cn } from "@/utils/cn";
 
 interface CustomButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  className?: string;
   icon?: React.ReactNode;
   label: string;
-  className?: string;
 }
 
 export const CustomButton = ({
+  className,
   icon,
   label,
-  className,
   ...props
 }: CustomButtonProps) => (
   <Button

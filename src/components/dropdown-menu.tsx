@@ -1,11 +1,11 @@
 import { Menu, MenuButton, MenuItems } from "@headlessui/react";
 
 interface DropdownMenuProps {
-  trigger: React.ReactNode;
   children: React.ReactNode;
+  trigger: React.ReactNode;
 }
 
-export const DropdownMenu = ({ trigger, children }: DropdownMenuProps) => (
+export const DropdownMenu = ({ children, trigger }: DropdownMenuProps) => (
   <Menu>
     <MenuButton>{trigger}</MenuButton>
     <MenuItems

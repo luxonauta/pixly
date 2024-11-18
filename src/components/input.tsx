@@ -2,13 +2,13 @@ import { Field, Input, Label } from "@headlessui/react";
 import { cn } from "@/utils/cn";
 
 interface CustomInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label: string;
   className?: string;
+  label: string;
 }
 
 export const CustomInput = ({
-  label,
   className,
+  label,
   onChange,
   ...props
 }: CustomInputProps) => (
