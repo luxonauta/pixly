@@ -1,5 +1,6 @@
 "use client";
 
+import { PlusIcon, TrashIcon } from "@heroicons/react/20/solid";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { CustomButton } from "./button";
@@ -8,7 +9,6 @@ import { ColorPicker } from "./color-picker";
 import { Grid } from "./grid";
 import { CustomInput } from "./input";
 import { CustomSelect } from "./select";
-import { PlusIcon, TrashIcon } from "@heroicons/react/20/solid";
 
 interface ColorItem {
   id: string;
@@ -29,14 +29,18 @@ const initialColors: ColorItem[] = [
 const getCustomGridSizes = (): string[] => {
   if (typeof window === "undefined") return ["8", "16", "32"];
   const savedSizes = localStorage.getItem("customGridSizes");
-  return savedSizes ? JSON.parse(savedSizes) : ["8", "16", "32"];
+  const sizes = savedSizes ? JSON.parse(savedSizes) : ["8", "16", "32"];
+  return sizes.sort((a: string, b: string) => Number(a) - Number(b));
 };
 
 const saveCustomGridSize = (size: number) => {
   if (typeof window === "undefined") return;
   const sizes = getCustomGridSizes();
+
   if (!sizes.includes(size.toString())) {
-    const updatedSizes = [...sizes, size.toString()];
+    const updatedSizes = [...sizes, size.toString()].sort(
+      (a, b) => Number(a) - Number(b)
+    );
     localStorage.setItem("customGridSizes", JSON.stringify(updatedSizes));
   }
 };
@@ -93,7 +97,10 @@ export const Editor: React.FC = () => {
     }
 
     saveCustomGridSize(size);
-    setAvailableGridSizes([...availableGridSizes, size.toString()]);
+    const newSizes = [...availableGridSizes, size.toString()].sort(
+      (a, b) => Number(a) - Number(b)
+    );
+    setAvailableGridSizes(newSizes);
     handleGridSizeChange(size);
     setCustomGridSize("");
   };
@@ -152,6 +159,7 @@ export const Editor: React.FC = () => {
               value: size,
               label: `${size}x${size}`
             }))}
+            value={gridSize.toString()}
             className="mt-2"
             onChange={(value) => handleGridSizeChange(Number(value))}
           />

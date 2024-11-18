@@ -3,17 +3,19 @@ import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { cn } from "@/utils/cn";
 
 interface CustomSelectProps {
-  label: string;
-  options: { value: string; label: string }[];
   className?: string;
+  label: string;
   onChange?: (value: string) => void;
+  options: { value: string; label: string }[];
+  value: string;
 }
 
 export const CustomSelect = ({
-  label,
-  options,
   className,
-  onChange
+  label,
+  onChange,
+  options,
+  value
 }: CustomSelectProps) => (
   <div className={cn("w-full", className)}>
     <Field>
@@ -25,6 +27,7 @@ export const CustomSelect = ({
             "focus:outline-none data-[focus]:outline-2 data-[focus]:-outline-offset-2 data-[focus]:outline-black/25",
             "*:text-black"
           )}
+          value={value}
           onChange={(e) => onChange?.(e.target.value)}
         >
           {options.map((option) => (
