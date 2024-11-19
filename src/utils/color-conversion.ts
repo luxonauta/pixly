@@ -1,16 +1,17 @@
 import { convertHsvToRgb } from "./convert-hsv-to-rgb";
 
-export const getFormattedColorWithAlpha = (
+export const formatColorWithAlpha = (
   hue: number,
   saturation: number,
   value: number,
-  alpha: number
+  alphaPercentage: number
 ): string => {
   const rgb = convertHsvToRgb(hue / 360, saturation, value);
-  return `rgba(${rgb.red}, ${rgb.green}, ${rgb.blue}, ${alpha / 100})`;
+  const alpha = alphaPercentage / 100;
+  return `rgba(${rgb.red}, ${rgb.green}, ${rgb.blue}, ${alpha})`;
 };
 
-export const getFormattedSolidColor = (
+export const formatSolidColor = (
   hue: number,
   saturation: number,
   value: number

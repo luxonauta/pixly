@@ -3,6 +3,7 @@
 import { PlusIcon, TrashIcon } from "@heroicons/react/20/solid";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { mergeColorStack } from "@/utils/color-stack";
 import { Alert } from "./alert";
 import { CustomButton } from "./button";
 import { Card } from "./card";
@@ -193,21 +194,37 @@ export const Editor: React.FC = () => {
   };
 
   const getMergedGrid = (): string[][] => {
-    const mergedGrid = Array(gridSize)
+    const colorStacks: string[][][] = Array(gridSize)
       .fill(null)
-      .map(() => Array(gridSize).fill("#FFFFFF"));
+      .map(() =>
+        Array(gridSize)
+          .fill(null)
+          .map(() => [])
+      );
 
-    for (const layer of [...layers].reverse()) {
-      if (!layer.visible) continue;
-      for (let i = 0; i < gridSize; i++) {
-        for (let j = 0; j < gridSize; j++) {
-          if (layer.grid[i][j] !== "#FFFFFF") {
-            mergedGrid[i][j] = layer.grid[i][j];
+    for (const layer of layers) {
+      if (!layer.visible || !layer.grid) continue;
+
+      for (let row = 0; row < gridSize; row++) {
+        if (!layer.grid[row]) continue;
+
+        for (let col = 0; col < gridSize; col++) {
+          const cellColor = layer.grid[row]?.[col];
+
+          if (cellColor && cellColor !== "#FFFFFF") {
+            colorStacks[row][col].push(cellColor);
           }
         }
       }
     }
-    return mergedGrid;
+
+    return colorStacks.map((row) =>
+      row.map((stack) => {
+        if (!stack.length) return "#FFFFFF";
+        if (stack.length === 1) return stack[0];
+        return mergeColorStack(stack);
+      })
+    );
   };
 
   const handleColorSelect = (color: string): void => {

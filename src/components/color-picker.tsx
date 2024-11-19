@@ -2,11 +2,11 @@ import { MenuItem } from "@headlessui/react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { HSV } from "@/types";
-import { convertHsvToRgb } from "@/utils/convert-hsv-to-rgb";
 import {
-  getFormattedColorWithAlpha,
-  getFormattedSolidColor
-} from "@/utils/get-formatted-colors";
+  formatColorWithAlpha,
+  formatSolidColor
+} from "@/utils/color-conversion";
+import { convertHsvToRgb } from "@/utils/convert-hsv-to-rgb";
 import { CustomButton } from "./button";
 import { DropdownMenu } from "./dropdown-menu";
 
@@ -170,7 +170,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
             style={{
               left: `${selectedColor.saturation}%`,
               top: `${100 - selectedColor.value}%`,
-              backgroundColor: getFormattedColorWithAlpha(
+              backgroundColor: formatColorWithAlpha(
                 selectedColor.hue,
                 selectedColor.saturation,
                 selectedColor.value,
@@ -202,7 +202,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
               ref={alphaRef}
               className="relative h-3 cursor-pointer rounded-full bg-[#EBEBE6]"
               style={{
-                backgroundImage: `linear-gradient(to right, transparent, ${getFormattedSolidColor(
+                backgroundImage: `linear-gradient(to right, transparent, ${formatSolidColor(
                   selectedColor.hue,
                   selectedColor.saturation,
                   selectedColor.value
@@ -214,7 +214,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                 className="absolute top-1/2 h-4 w-4 -translate-x-2 -translate-y-1/2 rounded-full border-2 border-white"
                 style={{
                   left: `${selectedColor.alpha}%`,
-                  backgroundColor: getFormattedColorWithAlpha(
+                  backgroundColor: formatColorWithAlpha(
                     selectedColor.hue,
                     selectedColor.saturation,
                     selectedColor.value,
@@ -227,7 +227,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
           <div
             className="h-10 w-10 rounded"
             style={{
-              backgroundColor: getFormattedColorWithAlpha(
+              backgroundColor: formatColorWithAlpha(
                 selectedColor.hue,
                 selectedColor.saturation,
                 selectedColor.value,
@@ -242,7 +242,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
             type="button"
             onClick={() =>
               onColorSelect(
-                getFormattedColorWithAlpha(
+                formatColorWithAlpha(
                   selectedColor.hue,
                   selectedColor.saturation,
                   selectedColor.value,
