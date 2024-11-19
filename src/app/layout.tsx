@@ -1,6 +1,7 @@
 import "@/styles/reset.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -19,6 +20,11 @@ const RootLayout = ({ children }: Readonly<{ children: React.ReactNode }>) => (
       <main className="m-6 max-w-[calc(100%-1.5rem)] rounded-xl bg-[#EBEBE6] p-3 text-[#171717] shadow-xl md:w-[64rem] lg:aspect-video">
         {children}
       </main>
+      <Script
+        defer
+        data-domain="pixly.art"
+        src="https://plausible.io/js/script.js"
+      />
     </body>
   </html>
 );
