@@ -1,4 +1,4 @@
-import { convertHsvToRgb } from "./convert-hsv-to-rgb";
+import { convertHsvToRgb } from "./color-model-conversions";
 
 export const formatColorWithAlpha = (
   hue: number,

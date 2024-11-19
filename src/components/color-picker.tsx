@@ -1,12 +1,16 @@
 import { MenuItem } from "@headlessui/react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { HSV } from "@/types";
 import {
   formatColorWithAlpha,
   formatSolidColor
 } from "@/utils/color-conversion";
-import { convertHsvToRgb } from "@/utils/convert-hsv-to-rgb";
+import {
+  convertHexToRgb,
+  convertHsvToRgb,
+  convertRgbToHex,
+  convertRgbToHsv
+} from "@/utils/color-model-conversions";
 import { CustomButton } from "./button";
 import { DropdownMenu } from "./dropdown-menu";
 
@@ -19,13 +23,14 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
   trigger,
   onColorSelect
 }) => {
-  const [selectedColor, setSelectedColor] = useState<HSV>({
+  const [selectedColor, setSelectedColor] = useState({
     hue: 0,
     saturation: 100,
     value: 100,
     alpha: 100
   });
 
+  const [hexValue, setHexValue] = useState("#FF0000");
   const [isDragging, setIsDragging] = useState(false);
   const [isHueDragging, setIsHueDragging] = useState(false);
   const [isAlphaDragging, setIsAlphaDragging] = useState(false);
@@ -34,80 +39,96 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
   const hueRef = useRef<HTMLDivElement>(null);
   const alphaRef = useRef<HTMLDivElement>(null);
 
-  const handlePickerMouseDown = (e: React.MouseEvent) => {
-    if (!pickerRef.current) return;
-    setIsDragging(true);
-    const rect = pickerRef.current.getBoundingClientRect();
-    const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
-    setSelectedColor((prev) => ({
-      ...prev,
-      saturation: Math.round(x * 100),
-      value: Math.round((1 - y) * 100)
-    }));
+  const updateHexValue = useCallback(() => {
+    const rgb = convertHsvToRgb(
+      selectedColor.hue,
+      selectedColor.saturation,
+      selectedColor.value
+    );
+    setHexValue(convertRgbToHex(rgb.red, rgb.green, rgb.blue));
+  }, [selectedColor]);
+
+  useEffect(() => {
+    updateHexValue();
+  }, [updateHexValue]);
+
+  const handleHexInput = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newHex = event.target.value.toUpperCase();
+    setHexValue(newHex);
+
+    if (/^#[0-9A-F]{6}$/i.test(newHex)) {
+      const rgb = convertHexToRgb(newHex);
+      if (rgb) {
+        const hsv = convertRgbToHsv(rgb.red, rgb.green, rgb.blue);
+        setSelectedColor((prev) => ({
+          ...prev,
+          hue: Math.round(hsv.hue),
+          saturation: Math.round(hsv.saturation),
+          value: Math.round(hsv.value)
+        }));
+      }
+    }
   };
 
-  const handlePickerMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!isDragging || !pickerRef.current) return;
-      const rect = pickerRef.current.getBoundingClientRect();
-      const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-      const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+  const calculateColorFromMouse = useCallback(
+    (
+      event: MouseEvent | React.MouseEvent,
+      ref: React.RefObject<HTMLDivElement>,
+      callback: (x: number, y: number) => void
+    ) => {
+      if (!ref.current) return;
+      const rect = ref.current.getBoundingClientRect();
+      const x = Math.max(
+        0,
+        Math.min(1, (event.clientX - rect.left) / rect.width)
+      );
+      const y = Math.max(
+        0,
+        Math.min(1, (event.clientY - rect.top) / rect.height)
+      );
+      callback(x, y);
+    },
+    []
+  );
+
+  const handlePickerMouseDown = (event: React.MouseEvent) => {
+    setIsDragging(true);
+    calculateColorFromMouse(event, pickerRef, (x, y) => {
       setSelectedColor((prev) => ({
         ...prev,
         saturation: Math.round(x * 100),
         value: Math.round((1 - y) * 100)
       }));
-    },
-    [isDragging]
-  );
-
-  const handleHueMouseDown = (e: React.MouseEvent) => {
-    if (!hueRef.current) return;
-    setIsHueDragging(true);
-    const rect = hueRef.current.getBoundingClientRect();
-    const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    setSelectedColor((prev) => ({
-      ...prev,
-      hue: Math.round(x * 360)
-    }));
+    });
   };
 
-  const handleHueMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!isHueDragging || !hueRef.current) return;
-      const rect = hueRef.current.getBoundingClientRect();
-      const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-      setSelectedColor((prev) => ({
-        ...prev,
-        hue: Math.round(x * 360)
-      }));
+  const handleMouseMove = useCallback(
+    (event: MouseEvent) => {
+      if (isDragging) {
+        calculateColorFromMouse(event, pickerRef, (x, y) => {
+          setSelectedColor((prev) => ({
+            ...prev,
+            saturation: Math.round(x * 100),
+            value: Math.round((1 - y) * 100)
+          }));
+        });
+      } else if (isHueDragging) {
+        calculateColorFromMouse(event, hueRef, (x) => {
+          setSelectedColor((prev) => ({
+            ...prev,
+            hue: Math.round(x * 360)
+          }));
+        });
+      } else if (isAlphaDragging) {
+        calculateColorFromMouse(event, alphaRef, (x) => {
+          setSelectedColor((prev) => ({
+            ...prev,
+            alpha: Math.round(x * 100)
+          }));
+        });
+      }
     },
-    [isHueDragging]
-  );
-
-  const handleAlphaMouseDown = (e: React.MouseEvent) => {
-    if (!alphaRef.current) return;
-    setIsAlphaDragging(true);
-    const rect = alphaRef.current.getBoundingClientRect();
-    const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    setSelectedColor((prev) => ({
-      ...prev,
-      alpha: Math.round(x * 100)
-    }));
-  };
-
-  const handleAlphaMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!isAlphaDragging || !alphaRef.current) return;
-      const rect = alphaRef.current.getBoundingClientRect();
-      const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-      setSelectedColor((prev) => ({
-        ...prev,
-        alpha: Math.round(x * 100)
-      }));
-    },
-    [isAlphaDragging]
+    [isDragging, isHueDragging, isAlphaDragging, calculateColorFromMouse]
   );
 
   const handleMouseUp = useCallback(() => {
@@ -117,39 +138,23 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
   }, []);
 
   useEffect(() => {
-    if (isDragging) {
-      window.addEventListener("mousemove", handlePickerMouseMove);
+    if (isDragging || isHueDragging || isAlphaDragging) {
+      window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
       return () => {
-        window.removeEventListener("mousemove", handlePickerMouseMove);
+        window.removeEventListener("mousemove", handleMouseMove);
         window.removeEventListener("mouseup", handleMouseUp);
       };
     }
-  }, [isDragging, handlePickerMouseMove, handleMouseUp]);
+  }, [
+    isDragging,
+    isHueDragging,
+    isAlphaDragging,
+    handleMouseMove,
+    handleMouseUp
+  ]);
 
-  useEffect(() => {
-    if (isHueDragging) {
-      window.addEventListener("mousemove", handleHueMouseMove);
-      window.addEventListener("mouseup", handleMouseUp);
-      return () => {
-        window.removeEventListener("mousemove", handleHueMouseMove);
-        window.removeEventListener("mouseup", handleMouseUp);
-      };
-    }
-  }, [isHueDragging, handleHueMouseMove, handleMouseUp]);
-
-  useEffect(() => {
-    if (isAlphaDragging) {
-      window.addEventListener("mousemove", handleAlphaMouseMove);
-      window.addEventListener("mouseup", handleMouseUp);
-      return () => {
-        window.removeEventListener("mousemove", handleAlphaMouseMove);
-        window.removeEventListener("mouseup", handleMouseUp);
-      };
-    }
-  }, [isAlphaDragging, handleAlphaMouseMove, handleMouseUp]);
-
-  const baseColor = convertHsvToRgb(selectedColor.hue / 360, 100, 100);
+  const baseColor = convertHsvToRgb(selectedColor.hue, 100, 100);
   const baseColorString = `rgb(${baseColor.red}, ${baseColor.green}, ${baseColor.blue})`;
 
   return (
@@ -188,7 +193,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                 backgroundImage:
                   "linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%)"
               }}
-              onMouseDown={handleHueMouseDown}
+              onMouseDown={() => setIsHueDragging(true)}
             >
               <div
                 className="absolute top-1/2 h-4 w-4 -translate-x-2 -translate-y-1/2 rounded-full border-2 border-white"
@@ -208,7 +213,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                   selectedColor.value
                 )})`
               }}
-              onMouseDown={handleAlphaMouseDown}
+              onMouseDown={() => setIsAlphaDragging(true)}
             >
               <div
                 className="absolute top-1/2 h-4 w-4 -translate-x-2 -translate-y-1/2 rounded-full border-2 border-white"
@@ -236,6 +241,14 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
             }}
           />
         </div>
+        <input
+          type="text"
+          value={hexValue}
+          onChange={handleHexInput}
+          className="w-full rounded border border-black/10 bg-white/40 px-2 py-1 font-medium uppercase"
+          placeholder="#000000"
+          maxLength={7}
+        />
         <MenuItem>
           <CustomButton
             label="Add color"
