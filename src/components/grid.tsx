@@ -16,7 +16,7 @@ export const Grid: React.FC<EditorGridProps> = ({
   return (
     <div className="aspect-square w-full">
       <div
-        className="grid h-full w-full gap-px overflow-hidden rounded-lg border border-black/10"
+        className="grid h-full w-full gap-px overflow-hidden rounded-md border border-black/10"
         style={{
           gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`
         }}

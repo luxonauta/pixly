@@ -18,7 +18,7 @@ export const CustomInput = ({
       <Input
         {...props}
         className={cn(
-          "block w-full rounded-md border-none bg-[#EBEBE6] px-3 py-2 placeholder:italic placeholder:text-[inherit] placeholder:opacity-60",
+          "block w-full rounded border-none bg-[#EBEBE6] px-3 py-2 placeholder:italic placeholder:text-[inherit] placeholder:opacity-60",
           "focus:outline-none data-[focus]:outline-2 data-[focus]:-outline-offset-2 data-[focus]:outline-black/25",
           className
         )}

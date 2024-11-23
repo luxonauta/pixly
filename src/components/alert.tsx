@@ -45,7 +45,7 @@ export const Alert: React.FC<AlertProps> = ({
       <div className="fixed inset-0 flex items-center justify-center overflow-hidden">
         <DialogPanel
           transition
-          className="flex w-80 max-w-md flex-col gap-2 rounded-lg bg-[#EBEBE6] px-3.5 pb-4 pt-5 shadow-sm duration-300 ease-out data-[closed]:scale-95 data-[closed]:opacity-0"
+          className="flex w-80 max-w-md flex-col gap-2 rounded-md bg-[#EBEBE6] px-3.5 pb-4 pt-5 shadow-sm duration-300 ease-out data-[closed]:scale-95 data-[closed]:opacity-0"
         >
           <DialogTitle as="h3" className="font-bold uppercase">
             {title}
