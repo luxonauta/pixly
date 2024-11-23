@@ -96,7 +96,7 @@ export const Editor: React.FC = () => {
     setActiveLayerId(initialLayer.id);
   }, [gridSize]);
 
-  const handleLayerAdd = () => {
+  const handleLayerAdd = (scrollContainer: HTMLDivElement | null) => {
     const newLayer: Layer = {
       id: `layer-${layers.length + 1}`,
       visible: true,
@@ -104,8 +104,19 @@ export const Editor: React.FC = () => {
         .fill(null)
         .map(() => Array(gridSize).fill("#FFFFFF"))
     };
+
     setLayers([...layers, newLayer]);
     setActiveLayerId(newLayer.id);
+
+    setTimeout(() => {
+      if (scrollContainer) {
+        const scrollHeight = scrollContainer.scrollHeight;
+        scrollContainer.scrollTo({
+          top: scrollHeight,
+          behavior: "smooth"
+        });
+      }
+    }, 0);
   };
 
   const handleLayerDelete = (id: string) => {
@@ -284,6 +295,7 @@ export const Editor: React.FC = () => {
                 label="Reset canvas"
                 type="button"
                 onClick={handleClear}
+                className="flex-1"
               />
             </div>
           </Card>

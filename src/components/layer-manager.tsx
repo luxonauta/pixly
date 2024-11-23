@@ -1,95 +1,102 @@
-import type { DragEndEvent } from "@dnd-kit/core";
-import { closestCenter, DndContext } from "@dnd-kit/core";
 import {
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import {
+  ChevronDownIcon,
+  ChevronUpIcon,
   EyeIcon,
   EyeSlashIcon,
   PlusIcon,
   TrashIcon
 } from "@heroicons/react/20/solid";
-import type React from "react";
+import React from "react";
+import { cn } from "@/utils/cn";
 import { CustomButton } from "./button";
 import { Card } from "./card";
 
 interface Layer {
+  grid: string[][];
   id: string;
   visible: boolean;
-  grid: string[][];
 }
 
 interface LayerManagerProps {
-  layers: Layer[];
   activeLayerId: string;
-  onLayerAdd: () => void;
-  onLayerDelete: (id: string) => void;
-  onLayerVisibilityToggle: (id: string) => void;
-  onLayerReorder: (oldIndex: number, newIndex: number) => void;
+  layers: Layer[];
   onActiveLayerChange: (id: string) => void;
+  onLayerAdd: (scrollContainer: HTMLDivElement | null) => void;
+  onLayerDelete: (id: string) => void;
+  onLayerReorder: (oldIndex: number, newIndex: number) => void;
+  onLayerVisibilityToggle: (id: string) => void;
 }
 
-interface SortableLayerItemProps {
-  layer: Layer;
+interface LayerItemProps {
   isActive: boolean;
-  onVisibilityToggle: () => void;
-  onDelete: () => void;
+  isFirst: boolean;
+  isLast: boolean;
+  layer: Layer;
   onClick: () => void;
+  onDelete: () => void;
+  onMoveDown: () => void;
+  onMoveUp: () => void;
+  onVisibilityToggle: () => void;
 }
 
-const SortableLayerItem: React.FC<SortableLayerItemProps> = ({
-  layer,
+const LayerItem: React.FC<LayerItemProps> = ({
   isActive,
-  onVisibilityToggle,
+  isFirst,
+  isLast,
+  layer,
+  onClick,
   onDelete,
-  onClick
+  onMoveDown,
+  onMoveUp,
+  onVisibilityToggle
 }) => {
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: layer.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition
-  };
-
   return (
     <div
-      ref={setNodeRef}
-      style={style}
-      className={`flex items-center gap-2 rounded-md border border-black/10 p-2 font-medium ${
+      className={cn(
+        "relative flex items-center gap-3 overflow-hidden rounded-md border border-black/10 p-2 font-medium transition-colors duration-200 focus-within:border-black/20 hover:border-black/20",
         isActive ? "bg-white/60" : "bg-white/20"
-      }`}
+      )}
     >
+      <div className="flex">
+        <button
+          type="button"
+          className={cn(
+            "rounded-full p-0.5 transition-colors duration-200 hover:bg-black/5",
+            {
+              "cursor-not-allowed opacity-30": isFirst
+            }
+          )}
+          onClick={onMoveUp}
+          disabled={isFirst}
+        >
+          <ChevronUpIcon className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          className={cn(
+            "rounded-full p-0.5 transition-colors duration-200 hover:bg-black/5",
+            {
+              "cursor-not-allowed opacity-30": isLast
+            }
+          )}
+          onClick={onMoveDown}
+          disabled={isLast}
+        >
+          <ChevronDownIcon className="h-3.5 w-3.5" />
+        </button>
+      </div>
       <button
         type="button"
-        className="cursor-grab touch-none"
-        {...attributes}
-        {...listeners}
+        className="flex-1 text-left font-semibold"
+        onClick={onClick}
       >
-        <svg
-          width="15"
-          height="15"
-          viewBox="0 0 15 15"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-3.5 w-3.5 text-black/60"
-        >
-          <title>Drag handle</title>
-          <path
-            d="M5.5 4.625C6.12132 4.625 6.625 4.12132 6.625 3.5C6.625 2.87868 6.12132 2.375 5.5 2.375C4.87868 2.375 4.375 2.87868 4.375 3.5C4.375 4.12132 4.87868 4.625 5.5 4.625ZM9.5 4.625C10.1213 4.625 10.625 4.12132 10.625 3.5C10.625 2.87868 10.1213 2.375 9.5 2.375C8.87868 2.375 8.375 2.87868 8.375 3.5C8.375 4.12132 8.87868 4.625 9.5 4.625ZM10.625 7.5C10.625 8.12132 10.1213 8.625 9.5 8.625C8.87868 8.625 8.375 8.12132 8.375 7.5C8.375 6.87868 8.87868 6.375 9.5 6.375C10.1213 6.375 10.625 6.87868 10.625 7.5ZM5.5 8.625C6.12132 8.625 6.625 8.12132 6.625 7.5C6.625 6.87868 6.12132 6.375 5.5 6.375C4.87868 6.375 4.375 6.87868 4.375 7.5C4.375 8.12132 4.87868 8.625 5.5 8.625ZM10.625 11.5C10.625 12.1213 10.1213 12.625 9.5 12.625C8.87868 12.625 8.375 12.1213 8.375 11.5C8.375 10.8787 8.87868 10.375 9.5 10.375C10.1213 10.375 10.625 10.8787 10.625 11.5ZM5.5 12.625C6.12132 12.625 6.625 12.1213 6.625 11.5C6.625 10.8787 6.12132 10.375 5.5 10.375C4.87868 10.375 4.375 10.8787 4.375 11.5C4.375 12.1213 4.87868 12.625 5.5 12.625Z"
-            fill="currentColor"
-            fillRule="evenodd"
-            clipRule="evenodd"
-          />
-        </svg>
-      </button>
-      <button type="button" className="flex-1 text-left" onClick={onClick}>
         Layer {Number.parseInt(layer.id.split("-")[1])}
       </button>
-      <button type="button" onClick={onVisibilityToggle}>
+      <button
+        type="button"
+        onClick={onVisibilityToggle}
+        className="opacity-75 transition-opacity duration-200 hover:opacity-100 focus:opacity-100 active:opacity-100"
+      >
         {layer.visible ? (
           <EyeIcon className="h-3.5 w-3.5" />
         ) : (
@@ -98,8 +105,8 @@ const SortableLayerItem: React.FC<SortableLayerItemProps> = ({
       </button>
       <button
         type="button"
-        className="text-black/60 hover:text-black"
         onClick={onDelete}
+        className="opacity-75 transition-opacity duration-200 hover:opacity-100 focus:opacity-100 active:opacity-100"
       >
         <TrashIcon className="h-3.5 w-3.5" />
       </button>
@@ -108,58 +115,75 @@ const SortableLayerItem: React.FC<SortableLayerItemProps> = ({
 };
 
 export const LayerManager: React.FC<LayerManagerProps> = ({
-  layers,
   activeLayerId,
+  layers,
+  onActiveLayerChange,
   onLayerAdd,
   onLayerDelete,
-  onLayerVisibilityToggle,
   onLayerReorder,
-  onActiveLayerChange
+  onLayerVisibilityToggle
 }) => {
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
+  const scrollContainerRef = React.useRef<HTMLDivElement | null>(null);
 
-    if (over && active.id !== over.id) {
-      const oldIndex = layers.findIndex((layer) => layer.id === active.id);
-      const newIndex = layers.findIndex((layer) => layer.id === over.id);
-      onLayerReorder(oldIndex, newIndex);
+  const handleMoveUp = (index: number) => {
+    if (index > 0) {
+      onLayerReorder(index, index - 1);
     }
+  };
+
+  const handleMoveDown = (index: number) => {
+    if (index < layers.length - 1) {
+      onLayerReorder(index, index + 1);
+    }
+  };
+
+  const handleAddLayer = () => {
+    onLayerAdd(scrollContainerRef.current);
   };
 
   return (
     <Card
       title="Layers"
-      description="Manage your drawing layers. Drag to reorder, toggle visibility, or select a layer to edit."
+      description="Manage your drawing layers. Use arrows to reorder, toggle visibility, or select a layer to edit."
     >
-      <div className="mt-2 flex flex-col gap-1">
-        <DndContext
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
+      <div className="relative mt-2 p-px">
+        <div
+          className={cn(
+            "pointer-events-none absolute bottom-0 left-0 right-0 h-10 rounded-md bg-gradient-to-t from-black/10 to-transparent",
+            layers.length > 3 ? "opacity-100" : "opacity-0",
+            "transition-opacity duration-200"
+          )}
+          aria-hidden="true"
+        />
+        <div
+          ref={scrollContainerRef}
+          className="max-h-[calc(2.75rem*3)] overflow-y-auto rounded-md focus-within:overscroll-contain hover:overscroll-contain"
         >
-          <SortableContext
-            items={layers}
-            strategy={verticalListSortingStrategy}
-          >
-            {layers.map((layer) => (
-              <SortableLayerItem
+          <div className="flex flex-col gap-1">
+            {layers.map((layer, index) => (
+              <LayerItem
                 key={layer.id}
                 layer={layer}
                 isActive={layer.id === activeLayerId}
+                isFirst={index === 0}
+                isLast={index === layers.length - 1}
                 onVisibilityToggle={() => onLayerVisibilityToggle(layer.id)}
                 onDelete={() => onLayerDelete(layer.id)}
                 onClick={() => onActiveLayerChange(layer.id)}
+                onMoveUp={() => handleMoveUp(index)}
+                onMoveDown={() => handleMoveDown(index)}
               />
             ))}
-          </SortableContext>
-        </DndContext>
-        <CustomButton
-          icon={<PlusIcon className="h-3.5 w-3.5" strokeWidth={3} />}
-          label="Add layer"
-          type="button"
-          onClick={onLayerAdd}
-          className="mt-2 self-end"
-        />
+          </div>
+        </div>
       </div>
+      <CustomButton
+        icon={<PlusIcon className="h-3.5 w-3.5" strokeWidth={3} />}
+        label="Add layer"
+        type="button"
+        onClick={handleAddLayer}
+        className="mt-2 self-end"
+      />
     </Card>
   );
 };
