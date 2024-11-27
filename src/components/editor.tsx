@@ -1,11 +1,18 @@
 "use client";
 
-import { PlusIcon, TrashIcon } from "@heroicons/react/20/solid";
+import {
+  BeakerIcon,
+  PencilIcon,
+  PlusIcon,
+  TrashIcon
+} from "@heroicons/react/20/solid";
 import type React from "react";
 import { useEffect, useState } from "react";
 import type { ColorItem, Layer } from "@/types";
+import { cn } from "@/utils/cn";
 import { mergeColorStack } from "@/utils/color-stack";
 import { Alert } from "./alert";
+import { BucketTool } from "./bucket-tool";
 import { CustomButton } from "./button";
 import { Card } from "./card";
 import { ColorPicker } from "./color-picker";
@@ -69,6 +76,7 @@ export const Editor: React.FC = () => {
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [layers, setLayers] = useState<Layer[]>([]);
   const [activeLayerId, setActiveLayerId] = useState<string>("");
+  const [activeTool, setActiveTool] = useState<"brush" | "bucket">("brush");
 
   useEffect(() => {
     setGridSize(getCanvasGridSize());
@@ -292,6 +300,35 @@ export const Editor: React.FC = () => {
               </div>
             </Card>
             <Card
+              title="Tools"
+              description="Choose between brush or bucket fill tool"
+            >
+              <div className="mt-3 flex gap-2">
+                <CustomButton
+                  icon={<PencilIcon className="h-3.5 w-3.5" strokeWidth={3} />}
+                  label="Brush"
+                  type="button"
+                  onClick={() => setActiveTool("brush")}
+                  className={cn(
+                    "flex-1",
+                    activeTool === "brush" &&
+                      "bg-black text-white hover:bg-black/90"
+                  )}
+                />
+                <CustomButton
+                  icon={<BeakerIcon className="h-3.5 w-3.5" strokeWidth={3} />}
+                  label="Bucket"
+                  type="button"
+                  onClick={() => setActiveTool("bucket")}
+                  className={cn(
+                    "flex-1",
+                    activeTool === "bucket" &&
+                      "bg-black text-white hover:bg-black/90"
+                  )}
+                />
+              </div>
+            </Card>
+            <Card
               title="Color palette"
               description="Choose a color from the palette or add a custom color to personalize your drawing."
             >
@@ -342,13 +379,32 @@ export const Editor: React.FC = () => {
           </div>
         </div>
         <div className="min-w-0 flex-1">
-          <Grid
-            gridSize={gridSize}
-            grid={getMergedGrid()}
-            onMouseDown={handleMouseDown}
-            onMouseEnter={handleMouseEnter}
-            onMouseUp={handleMouseUp}
-          />
+          {activeTool === "brush" ? (
+            <Grid
+              gridSize={gridSize}
+              grid={getMergedGrid()}
+              onMouseDown={handleMouseDown}
+              onMouseEnter={handleMouseEnter}
+              onMouseUp={handleMouseUp}
+            />
+          ) : (
+            <BucketTool
+              grid={
+                layers[layers.findIndex((l) => l.id === activeLayerId)].grid
+              }
+              selectedColor={selectedColor}
+              gridSize={gridSize}
+              onFill={(newGrid) => {
+                setLayers((currentLayers) =>
+                  currentLayers.map((layer) =>
+                    layer.id === activeLayerId
+                      ? { ...layer, grid: newGrid }
+                      : layer
+                  )
+                );
+              }}
+            />
+          )}
         </div>
       </div>
       {alertMessage && (
