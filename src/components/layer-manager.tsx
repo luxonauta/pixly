@@ -7,15 +7,10 @@ import {
   TrashIcon
 } from "@heroicons/react/20/solid";
 import React from "react";
+import type { Layer } from "@/types";
 import { cn } from "@/utils/cn";
 import { CustomButton } from "./button";
 import { Card } from "./card";
-
-interface Layer {
-  grid: string[][];
-  id: string;
-  visible: boolean;
-}
 
 interface LayerManagerProps {
   activeLayerId: string;

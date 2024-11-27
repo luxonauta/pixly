@@ -3,26 +3,17 @@
 import { PlusIcon, TrashIcon } from "@heroicons/react/20/solid";
 import type React from "react";
 import { useEffect, useState } from "react";
+import type { ColorItem, Layer } from "@/types";
 import { mergeColorStack } from "@/utils/color-stack";
 import { Alert } from "./alert";
 import { CustomButton } from "./button";
 import { Card } from "./card";
 import { ColorPicker } from "./color-picker";
+import { ExportManager } from "./export-manager";
 import { Grid } from "./grid";
 import { CustomInput } from "./input";
 import { LayerManager } from "./layer-manager";
 import { CustomSelect } from "./select";
-
-interface ColorItem {
-  id: string;
-  value: string;
-}
-
-interface Layer {
-  id: string;
-  visible: boolean;
-  grid: string[][];
-}
 
 const initialColors: ColorItem[] = [
   { id: "color-1", value: "#000000" },
@@ -260,88 +251,95 @@ export const Editor: React.FC = () => {
 
   return (
     <>
-      <div className="flex w-full flex-col gap-3 md:flex-row">
-        <div className="flex w-80 max-w-full flex-col gap-2">
-          <Card
-            title="Canvas size"
-            description="Select a predefined canvas size or define a custom size to suit your needs."
-          >
-            <CustomSelect
-              label="Canvas size"
-              options={availableGridSizes.map((size) => ({
-                value: size,
-                label: `${size}x${size}`
-              }))}
-              value={gridSize.toString()}
-              className="mt-2"
-              onChange={(value) => handleGridSizeChange(Number(value))}
+      <div className="flex w-full flex-col items-stretch gap-3 md:max-h-[42rem] md:flex-row">
+        <div className="relative w-80 max-w-full shrink-0 overflow-y-auto">
+          <div className="flex h-max w-full flex-col gap-2">
+            <Card
+              title="Canvas size"
+              description="Select a predefined canvas size or define a custom size to suit your needs."
+            >
+              <CustomSelect
+                label="Canvas size"
+                options={availableGridSizes.map((size) => ({
+                  value: size,
+                  label: `${size}x${size}`
+                }))}
+                value={gridSize.toString()}
+                className="mt-2"
+                onChange={(value) => handleGridSizeChange(Number(value))}
+              />
+              <CustomInput
+                type="number"
+                label="Custom size"
+                value={customGridSize}
+                onChange={(e) => setCustomGridSize(e.target.value)}
+                placeholder="Custom size (8-64)"
+              />
+              <div className="relative mt-2 flex gap-2">
+                <CustomButton
+                  icon={<PlusIcon className="h-3.5 w-3.5" strokeWidth={3} />}
+                  label="Apply custom size"
+                  type="button"
+                  onClick={handleCustomGridSizeChange}
+                />
+                <CustomButton
+                  icon={<TrashIcon className="h-3.5 w-3.5" strokeWidth={3} />}
+                  label="Reset canvas"
+                  type="button"
+                  onClick={handleClear}
+                  className="flex-1"
+                />
+              </div>
+            </Card>
+            <Card
+              title="Color palette"
+              description="Choose a color from the palette or add a custom color to personalize your drawing."
+            >
+              <div className="mt-3 flex flex-wrap gap-2.5">
+                {colors.map((color) => (
+                  <label key={color.id} className="relative">
+                    <input
+                      type="radio"
+                      name="colorPicker"
+                      value={color.value}
+                      checked={selectedColor === color.value}
+                      onChange={() => setSelectedColor(color.value)}
+                      className="absolute h-0 w-0 opacity-0"
+                    />
+                    <span
+                      style={{ backgroundColor: color.value }}
+                      className={`block h-8 w-8 cursor-pointer rounded-md border border-transparent shadow-sm transition-transform hover:scale-105 focus:outline-none active:scale-100 ${
+                        selectedColor === color.value &&
+                        "border-black/20 ring-2 ring-[#171717] ring-offset-2 ring-offset-white/90"
+                      }`}
+                    />
+                  </label>
+                ))}
+                <ColorPicker
+                  trigger={
+                    <div className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-transparent bg-white shadow-sm transition-transform hover:scale-105 focus:outline-none active:scale-100">
+                      <PlusIcon className="h-3.5 w-3.5" strokeWidth={3} />
+                    </div>
+                  }
+                  onColorSelect={handleColorSelect}
+                />
+              </div>
+            </Card>
+            <LayerManager
+              layers={layers}
+              activeLayerId={activeLayerId}
+              onLayerAdd={handleLayerAdd}
+              onLayerDelete={handleLayerDelete}
+              onLayerVisibilityToggle={handleLayerVisibilityToggle}
+              onLayerReorder={handleLayerReorder}
+              onActiveLayerChange={setActiveLayerId}
             />
-            <CustomInput
-              type="number"
-              label="Custom size"
-              value={customGridSize}
-              onChange={(e) => setCustomGridSize(e.target.value)}
-              placeholder="Custom size (8-64)"
+            <ExportManager
+              layers={layers}
+              gridSize={gridSize}
+              colors={colors}
             />
-            <div className="relative mt-2 flex gap-2">
-              <CustomButton
-                icon={<PlusIcon className="h-3.5 w-3.5" strokeWidth={3} />}
-                label="Apply custom size"
-                type="button"
-                onClick={handleCustomGridSizeChange}
-              />
-              <CustomButton
-                icon={<TrashIcon className="h-3.5 w-3.5" strokeWidth={3} />}
-                label="Reset canvas"
-                type="button"
-                onClick={handleClear}
-                className="flex-1"
-              />
-            </div>
-          </Card>
-          <Card
-            title="Color palette"
-            description="Choose a color from the palette or add a custom color to personalize your drawing."
-          >
-            <div className="mt-3 flex flex-wrap gap-2.5">
-              {colors.map((color) => (
-                <label key={color.id} className="relative">
-                  <input
-                    type="radio"
-                    name="colorPicker"
-                    value={color.value}
-                    checked={selectedColor === color.value}
-                    onChange={() => setSelectedColor(color.value)}
-                    className="absolute h-0 w-0 opacity-0"
-                  />
-                  <span
-                    style={{ backgroundColor: color.value }}
-                    className={`block h-8 w-8 cursor-pointer rounded-md border border-transparent shadow-sm transition-transform hover:scale-105 focus:outline-none active:scale-100 ${
-                      selectedColor === color.value &&
-                      "border-black/20 ring-2 ring-[#171717] ring-offset-2 ring-offset-white/90"
-                    }`}
-                  />
-                </label>
-              ))}
-              <ColorPicker
-                trigger={
-                  <div className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-transparent bg-white shadow-sm transition-transform hover:scale-105 focus:outline-none active:scale-100">
-                    <PlusIcon className="h-3.5 w-3.5" strokeWidth={3} />
-                  </div>
-                }
-                onColorSelect={handleColorSelect}
-              />
-            </div>
-          </Card>
-          <LayerManager
-            layers={layers}
-            activeLayerId={activeLayerId}
-            onLayerAdd={handleLayerAdd}
-            onLayerDelete={handleLayerDelete}
-            onLayerVisibilityToggle={handleLayerVisibilityToggle}
-            onLayerReorder={handleLayerReorder}
-            onActiveLayerChange={setActiveLayerId}
-          />
+          </div>
         </div>
         <div className="min-w-0 flex-1">
           <Grid
