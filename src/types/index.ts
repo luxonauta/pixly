@@ -22,3 +22,13 @@ export interface Project {
   layers: Layer[];
   version: string;
 }
+
+export interface EditorState {
+  layers: Layer[];
+  activeLayerId: string;
+}
+
+export interface Command {
+  execute: () => void;
+  undo: () => void;
+}

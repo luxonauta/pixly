@@ -7,10 +7,14 @@ import {
   TrashIcon
 } from "@heroicons/react/20/solid";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { DrawCommand } from "@/commands/draw-command";
+import { CommandHistory } from "@/commands/history";
+import { useCommands } from "@/hooks/use-commands";
 import type { ColorItem, Layer } from "@/types";
 import { cn } from "@/utils/cn";
 import { mergeColorStack } from "@/utils/color-stack";
+import { deepCloneGrid } from "@/utils/deep-clone";
 import { Alert } from "./alert";
 import { BucketTool } from "./bucket-tool";
 import { CustomButton } from "./button";
@@ -21,6 +25,7 @@ import { Grid } from "./grid";
 import { CustomInput } from "./input";
 import { LayerManager } from "./layer-manager";
 import { CustomSelect } from "./select";
+import { ShortcutIndicator } from "./shortcut-indicator";
 
 const initialColors: ColorItem[] = [
   { id: "color-1", value: "#000000" },
@@ -77,6 +82,10 @@ export const Editor: React.FC = () => {
   const [layers, setLayers] = useState<Layer[]>([]);
   const [activeLayerId, setActiveLayerId] = useState<string>("");
   const [activeTool, setActiveTool] = useState<"brush" | "bucket">("brush");
+
+  const [previousGrid, setPreviousGrid] = useState<string[][] | null>(null);
+  const commandHistory = useRef(new CommandHistory());
+  useCommands(commandHistory.current);
 
   useEffect(() => {
     setGridSize(getCanvasGridSize());
@@ -172,35 +181,90 @@ export const Editor: React.FC = () => {
   };
 
   const handleMouseDown = (rowIndex: number, colIndex: number): void => {
+    const activeLayer = layers.find((layer) => layer.id === activeLayerId);
+    if (
+      !activeLayer ||
+      rowIndex < 0 ||
+      rowIndex >= gridSize ||
+      colIndex < 0 ||
+      colIndex >= gridSize
+    )
+      return;
+
+    setPreviousGrid(deepCloneGrid(activeLayer.grid));
     setIsDrawing(true);
-    handleCellClick(rowIndex, colIndex);
+
+    const newGrid = deepCloneGrid(activeLayer.grid);
+    newGrid[rowIndex][colIndex] = selectedColor;
+
+    setLayers((currentLayers) =>
+      currentLayers.map((layer) =>
+        layer.id === activeLayerId ? { ...layer, grid: newGrid } : layer
+      )
+    );
   };
 
   const handleMouseEnter = (rowIndex: number, colIndex: number): void => {
-    if (isDrawing) handleCellClick(rowIndex, colIndex);
-  };
+    if (!isDrawing || !activeLayerId) return;
 
-  const handleMouseUp = (): void => setIsDrawing(false);
+    const activeLayer = layers.find((layer) => layer.id === activeLayerId);
+    if (
+      !activeLayer ||
+      rowIndex < 0 ||
+      rowIndex >= gridSize ||
+      colIndex < 0 ||
+      colIndex >= gridSize
+    )
+      return;
 
-  const handleCellClick = (rowIndex: number, colIndex: number) => {
+    const newGrid = deepCloneGrid(activeLayer.grid);
+    newGrid[rowIndex][colIndex] = selectedColor;
+
     setLayers((currentLayers) =>
       currentLayers.map((layer) =>
-        layer.id === activeLayerId
-          ? {
-              ...layer,
-              grid: layer.grid.map((row, i) =>
-                i === rowIndex
-                  ? [
-                      ...row.slice(0, colIndex),
-                      selectedColor,
-                      ...row.slice(colIndex + 1)
-                    ]
-                  : row
-              )
-            }
-          : layer
+        layer.id === activeLayerId ? { ...layer, grid: newGrid } : layer
       )
     );
+  };
+
+  const handleMouseUp = (): void => {
+    if (!isDrawing || !previousGrid || !activeLayerId) return;
+
+    const activeLayer = layers.find((layer) => layer.id === activeLayerId);
+    if (!activeLayer) return;
+
+    const drawCommand = new DrawCommand(
+      activeLayerId,
+      previousGrid,
+      deepCloneGrid(activeLayer.grid),
+      setLayers
+    );
+
+    commandHistory.current.execute(drawCommand);
+    setPreviousGrid(null);
+    setIsDrawing(false);
+  };
+
+  const handleBucketFill = (newGrid: string[][]) => {
+    const activeLayer = layers.find((layer) => layer.id === activeLayerId);
+    if (
+      !activeLayer ||
+      !newGrid ||
+      newGrid.length !== gridSize ||
+      newGrid.some((row) => row.length !== gridSize)
+    )
+      return;
+
+    const previousGrid = deepCloneGrid(activeLayer.grid);
+
+    const fillCommand = new DrawCommand(
+      activeLayerId,
+      previousGrid,
+      newGrid,
+      setLayers
+    );
+
+    commandHistory.current.execute(fillCommand);
   };
 
   const getMergedGrid = (): string[][] => {
@@ -247,14 +311,22 @@ export const Editor: React.FC = () => {
   };
 
   const handleClear = (): void => {
-    setLayers((currentLayers) =>
-      currentLayers.map((layer) => ({
-        ...layer,
-        grid: Array(gridSize)
-          .fill(null)
-          .map(() => Array(gridSize).fill("#FFFFFF"))
-      }))
+    const activeLayer = layers.find((layer) => layer.id === activeLayerId);
+    if (!activeLayer) return;
+
+    const previousGrid = deepCloneGrid(activeLayer.grid);
+    const newGrid = Array(gridSize)
+      .fill(null)
+      .map(() => Array(gridSize).fill("#FFFFFF"));
+
+    const clearCommand = new DrawCommand(
+      activeLayerId,
+      previousGrid,
+      newGrid,
+      setLayers
     );
+
+    commandHistory.current.execute(clearCommand);
   };
 
   return (
@@ -394,19 +466,12 @@ export const Editor: React.FC = () => {
               }
               selectedColor={selectedColor}
               gridSize={gridSize}
-              onFill={(newGrid) => {
-                setLayers((currentLayers) =>
-                  currentLayers.map((layer) =>
-                    layer.id === activeLayerId
-                      ? { ...layer, grid: newGrid }
-                      : layer
-                  )
-                );
-              }}
+              onFill={handleBucketFill}
             />
           )}
         </div>
       </div>
+      <ShortcutIndicator />
       {alertMessage && (
         <Alert
           title={alertTitle}
