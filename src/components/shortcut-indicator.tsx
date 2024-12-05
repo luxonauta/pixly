@@ -12,7 +12,7 @@ export const ShortcutIndicator: React.FC = () => {
         className="fixed bottom-4 right-4 z-50"
         role="status"
         aria-live="polite"
-        aria-atomic="true"
+        aria-label={`Keyboard shortcut: ${combinedKeys}`}
       >
         <TransitionChild
           enter="transition duration-300 ease-out"
@@ -25,22 +25,18 @@ export const ShortcutIndicator: React.FC = () => {
           <div
             className="flex items-center gap-2 rounded-lg bg-black/90 px-3 py-2 text-sm text-white backdrop-blur-sm"
             role="alert"
-            aria-label={`Active shortcut: ${combinedKeys}`}
+            aria-atomic="true"
           >
             {currentShortcut.keys.map((key, index) => (
               <React.Fragment key={key}>
-                <span
+                <kbd
                   className="inline-block rounded border border-white/20 bg-white/10 px-2 py-0.5 font-medium"
-                  role="presentation"
+                  aria-label={key}
                 >
                   {key}
-                </span>
+                </kbd>
                 {index < currentShortcut.keys.length - 1 && (
-                  <span
-                    className="text-white/60"
-                    role="presentation"
-                    aria-hidden="true"
-                  >
+                  <span className="text-white/60" aria-hidden="true">
                     +
                   </span>
                 )}
