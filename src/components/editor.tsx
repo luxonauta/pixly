@@ -233,7 +233,10 @@ export const Editor: React.FC = () => {
 
   const handleBucketFill = (newGrid: string[][]) => {
     const activeLayer = layers.find((layer) => layer.id === activeLayerId);
-    if (!activeLayer) return;
+    if (!activeLayer || 
+        !newGrid || 
+        newGrid.length !== gridSize || 
+        newGrid.some(row => row.length !== gridSize)) return;
 
     const previousGrid = deepCloneGrid(activeLayer.grid);
 
