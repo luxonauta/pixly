@@ -182,7 +182,14 @@ export const Editor: React.FC = () => {
 
   const handleMouseDown = (rowIndex: number, colIndex: number): void => {
     const activeLayer = layers.find((layer) => layer.id === activeLayerId);
-    if (!activeLayer) return;
+    if (
+      !activeLayer ||
+      rowIndex < 0 ||
+      rowIndex >= gridSize ||
+      colIndex < 0 ||
+      colIndex >= gridSize
+    )
+      return;
 
     setPreviousGrid(deepCloneGrid(activeLayer.grid));
     setIsDrawing(true);
@@ -201,7 +208,14 @@ export const Editor: React.FC = () => {
     if (!isDrawing || !activeLayerId) return;
 
     const activeLayer = layers.find((layer) => layer.id === activeLayerId);
-    if (!activeLayer) return;
+    if (
+      !activeLayer ||
+      rowIndex < 0 ||
+      rowIndex >= gridSize ||
+      colIndex < 0 ||
+      colIndex >= gridSize
+    )
+      return;
 
     const newGrid = deepCloneGrid(activeLayer.grid);
     newGrid[rowIndex][colIndex] = selectedColor;
@@ -233,10 +247,13 @@ export const Editor: React.FC = () => {
 
   const handleBucketFill = (newGrid: string[][]) => {
     const activeLayer = layers.find((layer) => layer.id === activeLayerId);
-    if (!activeLayer || 
-        !newGrid || 
-        newGrid.length !== gridSize || 
-        newGrid.some(row => row.length !== gridSize)) return;
+    if (
+      !activeLayer ||
+      !newGrid ||
+      newGrid.length !== gridSize ||
+      newGrid.some((row) => row.length !== gridSize)
+    )
+      return;
 
     const previousGrid = deepCloneGrid(activeLayer.grid);
 
