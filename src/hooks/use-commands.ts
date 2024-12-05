@@ -1,10 +1,12 @@
 import { useCallback, useEffect } from "react";
 import type { CommandHistory } from "@/commands/history";
+import { useShortcutStore } from "./use-shortcut-indicator";
 
 export const useCommands = (history: CommandHistory) => {
+  const showShortcut = useShortcutStore((state) => state.showShortcut);
+
   const handleKeyboardShortcuts = useCallback(
     (event: KeyboardEvent) => {
-      // Handle Undo: Ctrl/Cmd + Z
       if (
         (event.ctrlKey || event.metaKey) &&
         event.key === "z" &&
@@ -12,18 +14,26 @@ export const useCommands = (history: CommandHistory) => {
       ) {
         event.preventDefault();
         history.undo();
+        showShortcut({
+          keys: [event.metaKey ? "⌘" : "Ctrl", "Z"]
+        });
       }
 
-      // Handle Redo: Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y
       if (
         (event.ctrlKey || event.metaKey) &&
         ((event.key === "z" && event.shiftKey) || event.key === "y")
       ) {
         event.preventDefault();
         history.redo();
+        showShortcut({
+          keys:
+            event.key === "y"
+              ? [event.metaKey ? "⌘" : "Ctrl", "Y"]
+              : [event.metaKey ? "⌘" : "Ctrl", "Shift", "Z"]
+        });
       }
     },
-    [history]
+    [history, showShortcut]
   );
 
   useEffect(() => {

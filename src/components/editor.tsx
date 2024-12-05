@@ -25,6 +25,7 @@ import { Grid } from "./grid";
 import { CustomInput } from "./input";
 import { LayerManager } from "./layer-manager";
 import { CustomSelect } from "./select";
+import { ShortcutIndicator } from "./shortcut-indicator";
 
 const initialColors: ColorItem[] = [
   { id: "color-1", value: "#000000" },
@@ -82,6 +83,7 @@ export const Editor: React.FC = () => {
   const [activeLayerId, setActiveLayerId] = useState<string>("");
   const [activeTool, setActiveTool] = useState<"brush" | "bucket">("brush");
 
+  const [previousGrid, setPreviousGrid] = useState<string[][] | null>(null);
   const commandHistory = useRef(new CommandHistory());
   useCommands(commandHistory.current);
 
@@ -179,32 +181,54 @@ export const Editor: React.FC = () => {
   };
 
   const handleMouseDown = (rowIndex: number, colIndex: number): void => {
-    setIsDrawing(true);
-    handleCellClick(rowIndex, colIndex);
-  };
-
-  const handleMouseEnter = (rowIndex: number, colIndex: number): void => {
-    if (isDrawing) handleCellClick(rowIndex, colIndex);
-  };
-
-  const handleMouseUp = (): void => setIsDrawing(false);
-
-  const handleCellClick = (rowIndex: number, colIndex: number) => {
     const activeLayer = layers.find((layer) => layer.id === activeLayerId);
     if (!activeLayer) return;
 
-    const previousGrid = deepCloneGrid(activeLayer.grid);
+    setPreviousGrid(deepCloneGrid(activeLayer.grid));
+    setIsDrawing(true);
+
     const newGrid = deepCloneGrid(activeLayer.grid);
     newGrid[rowIndex][colIndex] = selectedColor;
+
+    setLayers((currentLayers) =>
+      currentLayers.map((layer) =>
+        layer.id === activeLayerId ? { ...layer, grid: newGrid } : layer
+      )
+    );
+  };
+
+  const handleMouseEnter = (rowIndex: number, colIndex: number): void => {
+    if (!isDrawing || !activeLayerId) return;
+
+    const activeLayer = layers.find((layer) => layer.id === activeLayerId);
+    if (!activeLayer) return;
+
+    const newGrid = deepCloneGrid(activeLayer.grid);
+    newGrid[rowIndex][colIndex] = selectedColor;
+
+    setLayers((currentLayers) =>
+      currentLayers.map((layer) =>
+        layer.id === activeLayerId ? { ...layer, grid: newGrid } : layer
+      )
+    );
+  };
+
+  const handleMouseUp = (): void => {
+    if (!isDrawing || !previousGrid || !activeLayerId) return;
+
+    const activeLayer = layers.find((layer) => layer.id === activeLayerId);
+    if (!activeLayer) return;
 
     const drawCommand = new DrawCommand(
       activeLayerId,
       previousGrid,
-      newGrid,
+      deepCloneGrid(activeLayer.grid),
       setLayers
     );
 
     commandHistory.current.execute(drawCommand);
+    setPreviousGrid(null);
+    setIsDrawing(false);
   };
 
   const handleBucketFill = (newGrid: string[][]) => {
@@ -427,6 +451,7 @@ export const Editor: React.FC = () => {
           )}
         </div>
       </div>
+      <ShortcutIndicator />
       {alertMessage && (
         <Alert
           title={alertTitle}
