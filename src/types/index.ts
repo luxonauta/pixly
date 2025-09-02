@@ -1,3 +1,29 @@
+export type InstrumentType = "square" | "triangle" | "noise";
+
+export type StepValue = 0 | 1 | 2 | 3 | 4;
+
+export type Track = {
+  id: string;
+  name: string;
+  instrument: InstrumentType;
+  octave: number;
+  volume: number;
+  steps: StepValue[];
+};
+
+export type Pattern = {
+  tracks: Track[];
+  steps: number;
+  palette: number[];
+  rootMidi: number;
+};
+
+export type TransportState = {
+  bpm: number;
+  isPlaying: boolean;
+  step: number;
+};
+
 export interface ColorItem {
   id: string;
   value: string;

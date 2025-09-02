@@ -1,27 +1,29 @@
 # [Pixly](https://pixly.art) 👾
 
-A feature-rich, web-based pixel art editor in the making. [Try it now →](https://pixly.art)
+Free and open tools for effortless pixel assets creation. [Try it now →](https://pixly.art)
 
-## Features
+## Chyp8 (Composer) [WIP]
+
+Simple 8-bit step sequencer.
+
+## Edyt (Editor)
+
+Simple pixel-art tool for creating sprites.
 
 - **Drawing tools**
-
   - ✅ Brush and bucket fill tools;
   - ✅ Custom color picker with saveable palette;
 
 - **Layer system**
-
   - ✅ Create, toggle, reorder, and merge layers;
   - ✅ Flexible layer management;
 
 - **Canvas**
-
   - ✅ Predefined sizes (`8x8`, `16x16`, `32x32`);
   - ✅ Custom sizes (`8-64` pixels);
   - ✅ Size persistence;
 
 - **Additional features**
-
   - ✅ Undo/Redo with keyboard shortcuts;
   - 🚧 Export capabilities;
   - 🚧 Local storage;
@@ -47,11 +49,9 @@ npm run dev
 
 Then, visit: [http://localhost:3000](http://localhost:3000);
 
-## Usage
-
 ### Basic Controls
 
-- **Canvas**: choose preset sizes or create custom (8x8 to 64x64);
+- **Canvas**: choose preset sizes or create custom (`8x8` to `64x64`);
 - **Drawing**: click/drag for pixels, bucket for fills;
 - **Layers**: create, toggle, reorder, delete (minimum: 1);
 

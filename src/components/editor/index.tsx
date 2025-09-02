@@ -1,31 +1,22 @@
 "use client";
 
-import {
-  BeakerIcon,
-  PencilIcon,
-  PlusIcon,
-  TrashIcon
-} from "@heroicons/react/20/solid";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+
 import { DrawCommand } from "@/commands/draw-command";
 import { CommandHistory } from "@/commands/history";
 import { useCommands } from "@/hooks/use-commands";
 import type { ColorItem, Layer } from "@/types";
-import { cn } from "@/utils/cn";
 import { mergeColorStack } from "@/utils/color-stack";
 import { deepCloneGrid } from "@/utils/deep-clone";
-import { Alert } from "./alert";
+
+import { Dialog } from "../shared/dialog";
+import { ShortcutIndicator } from "../shared/shortcut-indicator";
 import { BucketTool } from "./bucket-tool";
-import { CustomButton } from "./button";
-import { Card } from "./card";
 import { ColorPicker } from "./color-picker";
 import { ExportManager } from "./export-manager";
 import { Grid } from "./grid";
-import { CustomInput } from "./input";
 import { LayerManager } from "./layer-manager";
-import { CustomSelect } from "./select";
-import { ShortcutIndicator } from "./shortcut-indicator";
 
 const initialColors: ColorItem[] = [
   { id: "color-1", value: "#000000" },
@@ -41,6 +32,7 @@ const initialColors: ColorItem[] = [
 const getCustomGridSizes = (): string[] => {
   if (typeof window === "undefined") return ["8", "16", "32"];
   const savedSizes = localStorage.getItem("customGridSizes");
+
   return savedSizes
     ? JSON.parse(savedSizes).sort(
         (a: string, b: string) => Number(a) - Number(b)
@@ -51,6 +43,7 @@ const getCustomGridSizes = (): string[] => {
 const saveCustomGridSize = (size: number): void => {
   if (typeof window === "undefined") return;
   const sizes = getCustomGridSizes();
+
   if (!sizes.includes(size.toString())) {
     const updatedSizes = [...sizes, size.toString()].sort(
       (a, b) => Number(a) - Number(b)
@@ -98,7 +91,7 @@ export const Editor: React.FC = () => {
       visible: true,
       grid: Array(gridSize)
         .fill(null)
-        .map(() => Array(gridSize).fill("#FFFFFF"))
+        .map(() => Array(gridSize).fill("#222"))
     };
     setLayers([initialLayer]);
     setActiveLayerId(initialLayer.id);
@@ -110,7 +103,7 @@ export const Editor: React.FC = () => {
       visible: true,
       grid: Array(gridSize)
         .fill(null)
-        .map(() => Array(gridSize).fill("#FFFFFF"))
+        .map(() => Array(gridSize).fill("#222"))
     };
 
     setLayers([...layers, newLayer]);
@@ -133,8 +126,10 @@ export const Editor: React.FC = () => {
       setAlertMessage("You must have at least one layer.");
       return;
     }
+
     const newLayers = layers.filter((layer) => layer.id !== id);
     setLayers(newLayers);
+
     if (activeLayerId === id) setActiveLayerId(newLayers[0].id);
   };
 
@@ -165,11 +160,13 @@ export const Editor: React.FC = () => {
       setAlertMessage("Please enter a valid size between 8 and 64.");
       return;
     }
+
     if (availableGridSizes.includes(size.toString())) {
       setAlertTitle("Duplicate grid size");
       setAlertMessage(`The canvas size ${size}x${size} already exists.`);
       return;
     }
+
     saveCustomGridSize(size);
     setAvailableGridSizes(
       [...availableGridSizes, size.toString()].sort(
@@ -182,14 +179,16 @@ export const Editor: React.FC = () => {
 
   const handleMouseDown = (rowIndex: number, colIndex: number): void => {
     const activeLayer = layers.find((layer) => layer.id === activeLayerId);
+
     if (
       !activeLayer ||
       rowIndex < 0 ||
       rowIndex >= gridSize ||
       colIndex < 0 ||
       colIndex >= gridSize
-    )
+    ) {
       return;
+    }
 
     setPreviousGrid(deepCloneGrid(activeLayer.grid));
     setIsDrawing(true);
@@ -205,17 +204,21 @@ export const Editor: React.FC = () => {
   };
 
   const handleMouseEnter = (rowIndex: number, colIndex: number): void => {
-    if (!isDrawing || !activeLayerId) return;
+    if (!isDrawing || !activeLayerId) {
+      return;
+    }
 
     const activeLayer = layers.find((layer) => layer.id === activeLayerId);
+
     if (
       !activeLayer ||
       rowIndex < 0 ||
       rowIndex >= gridSize ||
       colIndex < 0 ||
       colIndex >= gridSize
-    )
+    ) {
       return;
+    }
 
     const newGrid = deepCloneGrid(activeLayer.grid);
     newGrid[rowIndex][colIndex] = selectedColor;
@@ -228,10 +231,14 @@ export const Editor: React.FC = () => {
   };
 
   const handleMouseUp = (): void => {
-    if (!isDrawing || !previousGrid || !activeLayerId) return;
+    if (!isDrawing || !previousGrid || !activeLayerId) {
+      return;
+    }
 
     const activeLayer = layers.find((layer) => layer.id === activeLayerId);
-    if (!activeLayer) return;
+    if (!activeLayer) {
+      return;
+    }
 
     const drawCommand = new DrawCommand(
       activeLayerId,
@@ -247,13 +254,15 @@ export const Editor: React.FC = () => {
 
   const handleBucketFill = (newGrid: string[][]) => {
     const activeLayer = layers.find((layer) => layer.id === activeLayerId);
+
     if (
       !activeLayer ||
       !newGrid ||
       newGrid.length !== gridSize ||
       newGrid.some((row) => row.length !== gridSize)
-    )
+    ) {
       return;
+    }
 
     const previousGrid = deepCloneGrid(activeLayer.grid);
 
@@ -285,7 +294,7 @@ export const Editor: React.FC = () => {
         for (let col = 0; col < gridSize; col++) {
           const cellColor = layer.grid[row]?.[col];
 
-          if (cellColor && cellColor !== "#FFFFFF") {
+          if (cellColor && cellColor !== "#222") {
             colorStacks[row][col].push(cellColor);
           }
         }
@@ -294,8 +303,9 @@ export const Editor: React.FC = () => {
 
     return colorStacks.map((row) =>
       row.map((stack) => {
-        if (!stack.length) return "#FFFFFF";
+        if (!stack.length) return "#222";
         if (stack.length === 1) return stack[0];
+
         return mergeColorStack(stack);
       })
     );
@@ -317,7 +327,7 @@ export const Editor: React.FC = () => {
     const previousGrid = deepCloneGrid(activeLayer.grid);
     const newGrid = Array(gridSize)
       .fill(null)
-      .map(() => Array(gridSize).fill("#FFFFFF"));
+      .map(() => Array(gridSize).fill("#222"));
 
     const clearCommand = new DrawCommand(
       activeLayerId,
@@ -331,109 +341,76 @@ export const Editor: React.FC = () => {
 
   return (
     <>
-      <div className="flex w-full flex-col items-stretch gap-3 md:max-h-[42rem] md:flex-row">
-        <div className="relative w-80 max-w-full shrink-0 overflow-y-auto">
-          <div className="flex h-max w-full flex-col gap-2">
-            <Card
-              title="Canvas size"
-              description="Select a predefined canvas size or define a custom size to suit your needs."
-            >
-              <CustomSelect
-                label="Canvas size"
-                options={availableGridSizes.map((size) => ({
-                  value: size,
-                  label: `${size}x${size}`
-                }))}
-                value={gridSize.toString()}
-                className="mt-2"
-                onChange={(value) => handleGridSizeChange(Number(value))}
-              />
-              <CustomInput
-                type="number"
-                label="Custom size"
-                value={customGridSize}
-                onChange={(e) => setCustomGridSize(e.target.value)}
-                placeholder="Custom size (8-64)"
-              />
-              <div className="relative mt-2 flex gap-2">
-                <CustomButton
-                  icon={<PlusIcon className="h-3.5 w-3.5" strokeWidth={3} />}
-                  label="Apply custom size"
-                  type="button"
-                  onClick={handleCustomGridSizeChange}
-                />
-                <CustomButton
-                  icon={<TrashIcon className="h-3.5 w-3.5" strokeWidth={3} />}
-                  label="Reset canvas"
-                  type="button"
-                  onClick={handleClear}
-                  className="flex-1"
+      <section id="editor" className="container">
+        <div className="header">
+          <h2>Edyt</h2>
+          <p>Simple pixel-art tool for creating sprites.</p>
+        </div>
+        <div className="wrapper">
+          <div className="toolbar">
+            <div>
+              <div>
+                <label htmlFor="canvas-size-select" className="sr-only">
+                  Canvas Size
+                </label>
+                <select
+                  id="canvas-size-select"
+                  value={gridSize.toString()}
+                  onChange={(e) => handleGridSizeChange(Number(e.target.value))}
+                >
+                  {availableGridSizes.map((size) => (
+                    <option key={size} value={size}>
+                      {size}x{size}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="custom-canvas-size" className="sr-only">
+                  Custom size
+                </label>
+                <input
+                  id="custom-canvas-size"
+                  type="number"
+                  value={customGridSize}
+                  onChange={(e) => setCustomGridSize(e.target.value)}
+                  placeholder="Custom size (8-64)"
                 />
               </div>
-            </Card>
-            <Card
-              title="Tools"
-              description="Choose between brush or bucket fill tool"
-            >
-              <div className="mt-3 flex gap-2">
-                <CustomButton
-                  icon={<PencilIcon className="h-3.5 w-3.5" strokeWidth={3} />}
-                  label="Brush"
-                  type="button"
-                  onClick={() => setActiveTool("brush")}
-                  className={cn(
-                    "flex-1",
-                    activeTool === "brush" &&
-                      "bg-black text-white hover:bg-black/90"
-                  )}
-                />
-                <CustomButton
-                  icon={<BeakerIcon className="h-3.5 w-3.5" strokeWidth={3} />}
-                  label="Bucket"
-                  type="button"
-                  onClick={() => setActiveTool("bucket")}
-                  className={cn(
-                    "flex-1",
-                    activeTool === "bucket" &&
-                      "bg-black text-white hover:bg-black/90"
-                  )}
-                />
+              <div>
+                <button type="button" onClick={handleCustomGridSizeChange}>
+                  Apply custom size
+                </button>
+                <button type="button" onClick={handleClear}>
+                  Clear canvas
+                </button>
               </div>
-            </Card>
-            <Card
-              title="Color palette"
-              description="Choose a color from the palette or add a custom color to personalize your drawing."
-            >
-              <div className="mt-3 flex flex-wrap gap-2.5">
+            </div>
+            <div>
+              <div>
+                <button type="button" onClick={() => setActiveTool("brush")}>
+                  Brush
+                </button>
+                <button type="button" onClick={() => setActiveTool("bucket")}>
+                  Bucket
+                </button>
+              </div>
+              <div className="palette">
                 {colors.map((color) => (
-                  <label key={color.id} className="relative">
+                  <label key={color.id}>
                     <input
                       type="radio"
                       name="colorPicker"
                       value={color.value}
                       checked={selectedColor === color.value}
                       onChange={() => setSelectedColor(color.value)}
-                      className="absolute h-0 w-0 opacity-0"
                     />
-                    <span
-                      style={{ backgroundColor: color.value }}
-                      className={`block h-8 w-8 cursor-pointer rounded-md border border-transparent shadow-sm transition-transform hover:scale-105 focus:outline-none active:scale-100 ${
-                        selectedColor === color.value &&
-                        "border-black/20 ring-2 ring-[#171717] ring-offset-2 ring-offset-white/90"
-                      }`}
-                    />
+                    <span style={{ backgroundColor: color.value }} />
                   </label>
                 ))}
-                <ColorPicker
-                  trigger={
-                    <div className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-transparent bg-white shadow-sm transition-transform hover:scale-105 focus:outline-none active:scale-100">
-                      <PlusIcon className="h-3.5 w-3.5" strokeWidth={3} />
-                    </div>
-                  }
-                  onColorSelect={handleColorSelect}
-                />
+                <ColorPicker onColorSelect={handleColorSelect} />
               </div>
-            </Card>
+            </div>
             <LayerManager
               layers={layers}
               activeLayerId={activeLayerId}
@@ -449,8 +426,6 @@ export const Editor: React.FC = () => {
               colors={colors}
             />
           </div>
-        </div>
-        <div className="min-w-0 flex-1">
           {activeTool === "brush" ? (
             <Grid
               gridSize={gridSize}
@@ -470,10 +445,10 @@ export const Editor: React.FC = () => {
             />
           )}
         </div>
-      </div>
+      </section>
       <ShortcutIndicator />
       {alertMessage && (
-        <Alert
+        <Dialog
           title={alertTitle}
           message={alertMessage}
           isOpen={!!alertMessage}

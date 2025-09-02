@@ -1,0 +1,574 @@
+@font-face {
+  font-style: normal;
+  font-weight: 400;
+  src: url("/fonts/departure-mono/departure-mono.woff2") format("woff2");
+  font-family: "Departure Mono";
+  font-display: swap;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:root {
+  --page-max-width: 957px;
+  --page-padding: 22px;
+  --font-family: "Departure Mono", monospace;
+
+  --background-color: #222;
+  --border-color: #6c6c58;
+  --color: #ffa132;
+  --color-muted: #8b8b72;
+}
+
+#root,
+#__next {
+  isolation: isolate;
+}
+
+html {
+  font-size: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  &::selection {
+    background-color: #000;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--background-color);
+  color: var(--color);
+  font-size: 11px;
+  line-height: 1.5;
+  font-family: var(--font-family);
+  font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-weight: 400;
+  font-size: inherit;
+}
+
+p {
+  margin: 0;
+}
+
+small {
+  color: var(--color-muted);
+  font: inherit;
+}
+
+header {
+  padding: var(--page-padding);
+}
+
+main {
+  display: grid;
+  gap: 22px;
+}
+
+button,
+.button,
+input,
+select {
+  display: grid;
+  position: relative;
+  place-items: center;
+  width: fit-content;
+  height: 33px;
+  padding: 5.5px 11px;
+  border: 1px solid var(--border-color);
+  border-radius: 0;
+  outline: none;
+  background-color: var(--background-color);
+  color: inherit;
+  font: inherit;
+  line-height: 1;
+  text-transform: uppercase;
+
+  &[type="file"] {
+    display: none;
+    visibility: hidden;
+  }
+
+  &[type="number"] {
+    justify-items: unset;
+  }
+
+  &:focus,
+  &:hover {
+    border-color: var(--color);
+  }
+}
+
+.container {
+  width: 100%;
+  max-width: var(--page-max-width);
+
+  @media (max-width: 957px) {
+    max-width: 100%;
+  }
+}
+
+#composer {
+  display: grid;
+  padding: var(--page-padding);
+  gap: 11px;
+  border: 1px dashed var(--border-color);
+
+  .toolbar,
+  .transport {
+    display: grid;
+    grid-auto-columns: max-content;
+    grid-auto-flow: column;
+    gap: 5.5px;
+  }
+
+  .settings,
+  .transport {
+    position: relative;
+
+    &::after {
+      position: absolute;
+      top: 100%;
+      left: -22px;
+      width: calc(100% + 44px);
+      border-bottom: 1px dashed var(--border-color);
+      content: "";
+      pointer-events: none;
+    }
+  }
+
+  .settings {
+    position: relative;
+    margin-top: 5.5px;
+
+    div {
+      display: grid;
+
+      &:first-child {
+        margin-bottom: 5.5px;
+        gap: 5.5px;
+      }
+
+      &:last-child {
+        margin-bottom: 11px;
+      }
+    }
+
+    label {
+      display: block;
+      width: 100%;
+    }
+
+    select {
+      width: fit-content;
+      min-width: 363px;
+    }
+  }
+
+  .transport {
+    align-items: stretch;
+    padding: 5.5px 0 16.5px;
+    gap: 22px;
+
+    label {
+      display: grid;
+      grid-auto-columns: max-content;
+      grid-auto-flow: column;
+      align-items: start;
+      gap: 11px;
+
+      input[type="number"] {
+        min-width: 99px;
+      }
+
+      input[type="range"] {
+        appearance: none;
+        width: 99px;
+        height: 22px;
+        padding: 0;
+        border-radius: 0;
+        background-color: transparent;
+
+        &::-webkit-slider-thumb {
+          appearance: none;
+          width: 11px;
+          height: 22px;
+          background: var(--color);
+          cursor: grab;
+        }
+
+        &:active {
+          &::-webkit-slider-thumb {
+            cursor: grabbing;
+          }
+        }
+      }
+    }
+  }
+
+  .sequencer-grid {
+    display: grid;
+    padding-top: 11px;
+
+    .track-row {
+      display: grid;
+      grid-template-columns: 198px 1fr;
+      align-items: start;
+      justify-content: end;
+
+      .info {
+        display: grid;
+      }
+
+      .steps {
+        display: grid;
+        grid-auto-flow: column;
+
+        button {
+          width: 44px;
+          height: 44px;
+          padding: 0;
+          cursor: cell;
+
+          &::after {
+            position: absolute;
+            inset: 5.5px;
+            border: 1px dashed var(--color);
+            content: "";
+            opacity: 0;
+            pointer-events: none;
+          }
+
+          &.playing {
+            &::after {
+              opacity: 1;
+            }
+          }
+
+          &:not(:last-child) {
+            border-right: none;
+          }
+
+          &:focus,
+          &:hover {
+            border-color: var(--border-color);
+
+            &::after {
+              border-color: var(--border-color);
+              opacity: 1;
+            }
+          }
+        }
+      }
+
+      &:not(:first-child) {
+        .steps {
+          button {
+            border-top: none;
+          }
+        }
+      }
+    }
+  }
+}
+
+#editor {
+  display: grid;
+  margin-bottom: 22px;
+  padding: var(--page-padding);
+  gap: 22px;
+  border: 1px dashed var(--border-color);
+
+  h3,
+  label {
+    color: var(--color-muted);
+    font: inherit;
+  }
+
+  .wrapper {
+    display: grid;
+    position: relative;
+    grid-template-columns: 209px 1fr;
+    align-items: stretch;
+    justify-content: end;
+    padding-top: 22px;
+    gap: 22px;
+
+    &::after {
+      position: absolute;
+      top: 0;
+      left: -22px;
+      width: calc(100% + 44px);
+      border-top: 1px dashed var(--border-color);
+      content: "";
+      pointer-events: none;
+    }
+  }
+
+  .toolbar {
+    display: grid;
+    position: relative;
+    align-content: start;
+    padding-right: 22px;
+    gap: 11px;
+
+    & > div {
+      display: grid;
+      width: 100%;
+      height: fit-content;
+      gap: 11px;
+
+      & > div {
+        display: grid;
+        width: 100%;
+        height: fit-content;
+        gap: 5.5px;
+      }
+    }
+
+    button,
+    input,
+    select {
+      width: 100%;
+    }
+
+    .palette {
+      display: flex;
+      flex-wrap: wrap;
+
+      label {
+        position: relative;
+        cursor: crosshair;
+
+        input {
+          display: none;
+          visibility: hidden;
+        }
+
+        span {
+          display: block;
+          width: 22px;
+          height: 22px;
+        }
+
+        &::after {
+          position: absolute;
+          inset: 5.5px;
+          border: 1px dashed var(--border-color);
+          content: "";
+          mix-blend-mode: difference;
+          opacity: 0;
+          pointer-events: none;
+        }
+
+        &:focus,
+        &:hover {
+          &::after {
+            opacity: 1;
+          }
+        }
+      }
+
+      .dropdown-menu {
+        position: relative;
+
+        .trigger {
+          width: 22px;
+          height: 22px;
+          padding: 0;
+        }
+
+        .panel {
+          display: grid;
+          z-index: 2;
+          position: absolute;
+          top: calc(100% + 11px);
+          left: 0;
+          width: 231px;
+          height: fit-content;
+          padding: 11px;
+          gap: 11px;
+          border: 1px dashed var(--border-color);
+          background-color: var(--background-color);
+          opacity: 0;
+          pointer-events: none;
+
+          .color-area {
+            position: relative;
+            width: 100%;
+            height: 187px;
+          }
+
+          .picker-indicator {
+            position: absolute;
+            width: 11px;
+            height: 11px;
+            transform: translate(-50%, -50%);
+            border: 2px dashed white;
+          }
+
+          .sliders-wrapper {
+            display: flex;
+            align-items: stretch;
+            gap: 11px;
+
+            .sliders {
+              display: flex;
+              flex-grow: 1;
+              flex-shrink: 0;
+              flex-basis: 0;
+              flex-direction: column;
+              gap: 5.5px;
+
+              .slide {
+                position: relative;
+                width: 100%;
+                height: 11px;
+
+                .picker-indicator {
+                  top: 50%;
+                }
+              }
+            }
+
+            .preview {
+              aspect-ratio: 1/1;
+              height: 100%;
+            }
+          }
+        }
+
+        .color-input {
+          display: grid;
+          width: 100%;
+          gap: 5.5px;
+        }
+
+        &.open {
+          .panel {
+            opacity: 1;
+            pointer-events: all;
+          }
+        }
+      }
+    }
+
+    .layer-list {
+      display: grid;
+      gap: 5.5px;
+
+      .item {
+        display: flex;
+        place-items: center;
+        width: 100%;
+        min-height: 33px;
+        padding: 5.5px 11px;
+        gap: 11px;
+        border: 1px dashed var(--border-color);
+
+        button {
+          padding: 0;
+          border: none;
+        }
+
+        .move-buttons button,
+        .visibility-toggle,
+        .delete-button {
+          color: var(--color-muted);
+
+          svg {
+            pointer-events: none;
+          }
+        }
+
+        .move-buttons {
+          display: grid;
+          gap: 5.5px;
+
+          button {
+            width: 11px;
+            height: 11px;
+          }
+        }
+
+        .label {
+          height: 100%;
+        }
+
+        .visibility-toggle,
+        .delete-button {
+          width: 22px;
+          height: 22px;
+        }
+      }
+    }
+
+    &::after {
+      position: absolute;
+      top: -22px;
+      left: 100%;
+      width: 1px;
+      height: calc(100% + 44px);
+      border-right: 1px dashed var(--border-color);
+      content: "";
+      pointer-events: none;
+    }
+  }
+
+  .art-grid {
+    display: grid;
+    width: 100%;
+
+    & > div {
+      display: grid;
+      aspect-ratio: 1 / 1;
+      overflow: hidden;
+      gap: 1px;
+      border: 1px solid var(--border-color);
+      background-color: var(--border-color);
+
+      .cell {
+        position: relative;
+        cursor: cell;
+
+        &::after {
+          position: absolute;
+          inset: 5.5px;
+          border: 1px dashed var(--border-color);
+          content: "";
+          opacity: 0;
+          pointer-events: none;
+        }
+
+        &:focus,
+        &:hover {
+          &::after {
+            opacity: 1;
+          }
+        }
+      }
+    }
+  }
+}
+
+.sr-only {
+  display: none;
+  visibility: hidden;
+}

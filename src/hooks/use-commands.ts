@@ -1,5 +1,7 @@
 import { useCallback, useEffect } from "react";
+
 import type { CommandHistory } from "@/commands/history";
+
 import { useShortcutStore } from "./use-shortcut-indicator";
 
 export const useCommands = (history: CommandHistory) => {

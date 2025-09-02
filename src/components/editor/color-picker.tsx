@@ -1,6 +1,6 @@
-import { MenuItem } from "@headlessui/react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+
 import {
   formatColorWithAlpha,
   formatSolidColor
@@ -11,18 +11,12 @@ import {
   convertRgbToHex,
   convertRgbToHsv
 } from "@/utils/color-model-conversions";
-import { CustomButton } from "./button";
-import { DropdownMenu } from "./dropdown-menu";
 
 interface ColorPickerProps {
-  trigger: React.ReactNode;
   onColorSelect: (color: string) => void;
 }
 
-export const ColorPicker: React.FC<ColorPickerProps> = ({
-  trigger,
-  onColorSelect
-}) => {
+export const ColorPicker: React.FC<ColorPickerProps> = ({ onColorSelect }) => {
   const [selectedColor, setSelectedColor] = useState({
     hue: 0,
     saturation: 100,
@@ -34,6 +28,8 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isHueDragging, setIsHueDragging] = useState(false);
   const [isAlphaDragging, setIsAlphaDragging] = useState(false);
+
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   const pickerRef = useRef<HTMLDivElement>(null);
   const hueRef = useRef<HTMLDivElement>(null);
@@ -58,6 +54,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
 
     if (/^#[0-9A-F]{6}$/i.test(newHex)) {
       const rgb = convertHexToRgb(newHex);
+
       if (rgb) {
         const hsv = convertRgbToHsv(rgb.red, rgb.green, rgb.blue);
         setSelectedColor((prev) => ({
@@ -73,10 +70,11 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
   const calculateColorFromMouse = useCallback(
     (
       event: MouseEvent | React.MouseEvent,
-      ref: React.RefObject<HTMLDivElement>,
+      ref: React.RefObject<HTMLDivElement | null>,
       callback: (x: number, y: number) => void
     ) => {
       if (!ref.current) return;
+
       const rect = ref.current.getBoundingClientRect();
       const x = Math.max(
         0,
@@ -141,6 +139,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
     if (isDragging || isHueDragging || isAlphaDragging) {
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
+
       return () => {
         window.removeEventListener("mousemove", handleMouseMove);
         window.removeEventListener("mouseup", handleMouseUp);
@@ -158,115 +157,125 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
   const baseColorString = `rgb(${baseColor.red}, ${baseColor.green}, ${baseColor.blue})`;
 
   return (
-    <DropdownMenu trigger={trigger}>
-      <div className="flex w-48 flex-col gap-2">
-        <div
-          ref={pickerRef}
-          className="relative h-48 w-full cursor-crosshair rounded"
-          style={{
-            backgroundColor: baseColorString,
-            backgroundImage:
-              "linear-gradient(to right, #fff, transparent), linear-gradient(to top, #000, transparent)"
+    <>
+      <div className={isPanelOpen ? "dropdown-menu open" : "dropdown-menu"}>
+        <button
+          type="button"
+          onClick={() => {
+            setIsPanelOpen(!isPanelOpen);
           }}
-          onMouseDown={handlePickerMouseDown}
+          className="trigger"
         >
+          +
+        </button>
+        <div className="panel">
           <div
-            className="absolute h-4 w-4 -translate-x-2 -translate-y-2 rounded-full border-2 border-white"
+            ref={pickerRef}
+            onMouseDown={handlePickerMouseDown}
+            className="color-area"
             style={{
-              left: `${selectedColor.saturation}%`,
-              top: `${100 - selectedColor.value}%`,
-              backgroundColor: formatColorWithAlpha(
-                selectedColor.hue,
-                selectedColor.saturation,
-                selectedColor.value,
-                selectedColor.alpha
-              )
+              backgroundColor: baseColorString,
+              backgroundImage:
+                "linear-gradient(to right, #fff, transparent), linear-gradient(to top, #000, transparent)"
             }}
-          />
-        </div>
-        <div className="mt-2 flex w-full items-stretch gap-4">
-          <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+          >
             <div
-              ref={hueRef}
-              className="relative h-3 cursor-pointer rounded-full bg-[#EBEBE6]"
+              className="picker-indicator"
               style={{
-                backgroundImage:
-                  "linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%)"
-              }}
-              onMouseDown={() => setIsHueDragging(true)}
-            >
-              <div
-                className="absolute top-1/2 h-4 w-4 -translate-x-2 -translate-y-1/2 rounded-full border-2 border-white"
-                style={{
-                  left: `${(selectedColor.hue / 360) * 100}%`,
-                  backgroundColor: baseColorString
-                }}
-              />
-            </div>
-            <div
-              ref={alphaRef}
-              className="relative h-3 cursor-pointer rounded-full bg-[#EBEBE6]"
-              style={{
-                backgroundImage: `linear-gradient(to right, transparent, ${formatSolidColor(
-                  selectedColor.hue,
-                  selectedColor.saturation,
-                  selectedColor.value
-                )})`
-              }}
-              onMouseDown={() => setIsAlphaDragging(true)}
-            >
-              <div
-                className="absolute top-1/2 h-4 w-4 -translate-x-2 -translate-y-1/2 rounded-full border-2 border-white"
-                style={{
-                  left: `${selectedColor.alpha}%`,
-                  backgroundColor: formatColorWithAlpha(
-                    selectedColor.hue,
-                    selectedColor.saturation,
-                    selectedColor.value,
-                    selectedColor.alpha
-                  )
-                }}
-              />
-            </div>
-          </div>
-          <div
-            className="h-10 w-10 rounded"
-            style={{
-              backgroundColor: formatColorWithAlpha(
-                selectedColor.hue,
-                selectedColor.saturation,
-                selectedColor.value,
-                selectedColor.alpha
-              )
-            }}
-          />
-        </div>
-        <input
-          type="text"
-          value={hexValue}
-          onChange={handleHexInput}
-          className="w-full rounded border border-black/10 bg-white/40 px-2 py-1 font-medium uppercase"
-          placeholder="#000000"
-          maxLength={7}
-        />
-        <MenuItem>
-          <CustomButton
-            label="Add color"
-            type="button"
-            onClick={() =>
-              onColorSelect(
-                formatColorWithAlpha(
+                left: `${selectedColor.saturation}%`,
+                top: `${100 - selectedColor.value}%`,
+                backgroundColor: formatColorWithAlpha(
                   selectedColor.hue,
                   selectedColor.saturation,
                   selectedColor.value,
                   selectedColor.alpha
                 )
-              )
-            }
-            className="mt-1 w-full justify-center"
-          />
-        </MenuItem>
+              }}
+            />
+          </div>
+          <div className="sliders-wrapper">
+            <div className="sliders">
+              <div
+                ref={hueRef}
+                className="slide"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%)"
+                }}
+                onMouseDown={() => setIsHueDragging(true)}
+              >
+                <div
+                  className="picker-indicator"
+                  style={{
+                    left: `${(selectedColor.hue / 360) * 100}%`,
+                    backgroundColor: baseColorString
+                  }}
+                />
+              </div>
+              <div
+                ref={alphaRef}
+                className="slide"
+                style={{
+                  backgroundImage: `linear-gradient(to right, transparent, ${formatSolidColor(
+                    selectedColor.hue,
+                    selectedColor.saturation,
+                    selectedColor.value
+                  )})`
+                }}
+                onMouseDown={() => setIsAlphaDragging(true)}
+              >
+                <div
+                  className="picker-indicator"
+                  style={{
+                    left: `${selectedColor.alpha}%`,
+                    backgroundColor: formatColorWithAlpha(
+                      selectedColor.hue,
+                      selectedColor.saturation,
+                      selectedColor.value,
+                      selectedColor.alpha
+                    )
+                  }}
+                />
+              </div>
+            </div>
+            <div
+              className="preview"
+              style={{
+                backgroundColor: formatColorWithAlpha(
+                  selectedColor.hue,
+                  selectedColor.saturation,
+                  selectedColor.value,
+                  selectedColor.alpha
+                )
+              }}
+            />
+          </div>
+          <div className="color-input">
+            <input
+              type="text"
+              value={hexValue}
+              onChange={handleHexInput}
+              placeholder="#000000"
+              maxLength={7}
+            />
+            <button
+              type="button"
+              onClick={() =>
+                onColorSelect(
+                  formatColorWithAlpha(
+                    selectedColor.hue,
+                    selectedColor.saturation,
+                    selectedColor.value,
+                    selectedColor.alpha
+                  )
+                )
+              }
+            >
+              Add color
+            </button>
+          </div>
+        </div>
       </div>
-    </DropdownMenu>
+    </>
   );
 };

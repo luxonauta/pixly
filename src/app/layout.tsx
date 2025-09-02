@@ -1,26 +1,16 @@
-import "@/styles/reset.css";
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import "./globals.css";
+
 import Script from "next/script";
-import { cn } from "@/utils/cn";
 
-const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-inter"
-});
-
-export const metadata: Metadata = {
+export const metadata = {
   title: "Pixly",
-  description: "Simple and intuitive web-based pixel art editor."
+  description: "Free and open tools for effortless pixel assets creation."
 };
 
 const RootLayout = ({ children }: Readonly<{ children: React.ReactNode }>) => (
-  <html lang="en" className={cn(inter.variable, "scroll-smooth")}>
-    <body className="flex min-h-[100vh] items-center justify-center bg-[#171717] font-sans text-xs leading-relaxed antialiased">
-      <main className="m-6 max-w-[calc(100%-1.5rem)] rounded-lg bg-[#EBEBE6] p-3 text-[#171717] shadow-xl md:w-[64rem] lg:aspect-video">
-        {children}
-      </main>
+  <html lang="en" suppressHydrationWarning>
+    <body>
+      {children}
       <Script
         defer
         data-domain="pixly.art"

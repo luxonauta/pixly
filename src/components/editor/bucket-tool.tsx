@@ -82,9 +82,8 @@ export const BucketTool: React.FC<BucketToolProps> = ({
   };
 
   return (
-    <div className="aspect-square w-full">
+    <div className="art-grid">
       <div
-        className="grid h-full w-full gap-px overflow-hidden rounded-md border border-black/10"
         style={{
           gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`
         }}
@@ -93,15 +92,15 @@ export const BucketTool: React.FC<BucketToolProps> = ({
           row.map((cellColor, colIndex) => (
             <div
               key={`${rowIndex}-${colIndex}-${cellColor}`}
-              className="aspect-square w-full cursor-pointer transition-colors duration-150 hover:opacity-90"
-              style={{
-                backgroundColor: cellColor
-              }}
               onClick={() => handleCellClick(rowIndex, colIndex)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   handleCellClick(rowIndex, colIndex);
                 }
+              }}
+              className="cell"
+              style={{
+                backgroundColor: cellColor
               }}
             />
           ))
