@@ -1,11 +1,3 @@
-@font-face {
-  font-style: normal;
-  font-weight: 400;
-  src: url("/fonts/departure-mono/departure-mono.woff2") format("woff2");
-  font-family: "Departure Mono";
-  font-display: swap;
-}
-
 * {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
@@ -14,7 +6,7 @@
 :root {
   --page-max-width: 957px;
   --page-padding: 22px;
-  --font-family: "Departure Mono", monospace;
+  --font-family: var(--font-departure-mono), monospace;
 
   --background-color: #222;
   --border-color: #6c6c58;
