@@ -7,7 +7,7 @@ interface Shortcut {
 interface ShortcutStore {
   isVisible: boolean;
   currentShortcut: Shortcut;
-  timeoutId: NodeJS.Timeout | undefined;
+  timeoutId: ReturnType<typeof setTimeout> | undefined;
   timeoutDuration: number;
   showShortcut: (shortcut: Shortcut) => void;
   setTimeoutDuration: (duration: number) => void;
@@ -17,14 +17,11 @@ export const useShortcutStore = create<ShortcutStore>((set, get) => ({
   isVisible: false,
   currentShortcut: { keys: [] },
   timeoutId: undefined,
-  timeoutDuration: 1000,
-
-  showShortcut: (shortcut: Shortcut) => {
+  timeoutDuration: 1200,
+  showShortcut: (shortcut) => {
     const state = get();
 
-    if (state.timeoutId) {
-      clearTimeout(state.timeoutId);
-    }
+    if (state.timeoutId) clearTimeout(state.timeoutId);
 
     const timeoutId = setTimeout(() => {
       set({ isVisible: false });
@@ -36,8 +33,5 @@ export const useShortcutStore = create<ShortcutStore>((set, get) => ({
       timeoutId
     });
   },
-
-  setTimeoutDuration: (duration: number) => {
-    set({ timeoutDuration: duration });
-  }
+  setTimeoutDuration: (duration) => set({ timeoutDuration: duration })
 }));

@@ -28,21 +28,21 @@ export const ExportManager = ({
 
         for (let colIndex = 0; colIndex < row.length; colIndex++) {
           const color = row[colIndex];
+          if (!color || color === "transparent") continue;
 
-          if (color !== "#FFFFFF") {
-            ctx.fillStyle = color;
-            ctx.fillRect(
-              colIndex * pixelSize,
-              rowIndex * pixelSize,
-              pixelSize,
-              pixelSize
-            );
-          }
+          ctx.fillStyle = color;
+          ctx.fillRect(
+            colIndex * pixelSize,
+            rowIndex * pixelSize,
+            pixelSize,
+            pixelSize
+          );
         }
       }
     }
 
     const link = document.createElement("a");
+
     link.download = `edyt-art-${new Date().toISOString().split("T")[0]}.png`;
     link.href = canvas.toDataURL("image/png");
     link.click();
@@ -50,9 +50,10 @@ export const ExportManager = ({
 
   const saveProject = () => {
     const projectData: Project = {
-      layers,
-      gridSize,
+      name: "Edyt Project",
       colors,
+      gridSize,
+      layers,
       version: "1.0.0"
     };
 

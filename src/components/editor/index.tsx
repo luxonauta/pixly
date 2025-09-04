@@ -2,6 +2,7 @@
 
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { useMemo } from "react";
 
 import { DrawCommand } from "@/commands/draw-command";
 import { CommandHistory } from "@/commands/history";
@@ -42,6 +43,7 @@ const getCustomGridSizes = (): string[] => {
 
 const saveCustomGridSize = (size: number): void => {
   if (typeof window === "undefined") return;
+
   const sizes = getCustomGridSizes();
 
   if (!sizes.includes(size.toString())) {
@@ -54,7 +56,9 @@ const saveCustomGridSize = (size: number): void => {
 
 const getCanvasGridSize = (): number => {
   if (typeof window === "undefined") return 16;
+
   const savedGridSize = localStorage.getItem("customGridSize");
+
   return savedGridSize ? Number(savedGridSize) : 16;
 };
 
@@ -91,7 +95,7 @@ export const Editor: React.FC = () => {
       visible: true,
       grid: Array(gridSize)
         .fill(null)
-        .map(() => Array(gridSize).fill("#222"))
+        .map(() => Array(gridSize).fill("transparent"))
     };
     setLayers([initialLayer]);
     setActiveLayerId(initialLayer.id);
@@ -103,7 +107,7 @@ export const Editor: React.FC = () => {
       visible: true,
       grid: Array(gridSize)
         .fill(null)
-        .map(() => Array(gridSize).fill("#222"))
+        .map(() => Array(gridSize).fill("transparent"))
     };
 
     setLayers([...layers, newLayer]);
@@ -144,6 +148,7 @@ export const Editor: React.FC = () => {
   const handleLayerReorder = (oldIndex: number, newIndex: number) => {
     const newLayers = [...layers];
     const [movedLayer] = newLayers.splice(oldIndex, 1);
+
     newLayers.splice(newIndex, 0, movedLayer);
     setLayers(newLayers);
   };
@@ -155,6 +160,7 @@ export const Editor: React.FC = () => {
 
   const handleCustomGridSizeChange = (): void => {
     const size = Number.parseInt(customGridSize, 10);
+
     if (Number.isNaN(size) || size < 8 || size > 64) {
       setAlertTitle("Invalid size input");
       setAlertMessage("Please enter a valid size between 8 and 64.");
@@ -194,6 +200,7 @@ export const Editor: React.FC = () => {
     setIsDrawing(true);
 
     const newGrid = deepCloneGrid(activeLayer.grid);
+
     newGrid[rowIndex][colIndex] = selectedColor;
 
     setLayers((currentLayers) =>
@@ -221,6 +228,7 @@ export const Editor: React.FC = () => {
     }
 
     const newGrid = deepCloneGrid(activeLayer.grid);
+
     newGrid[rowIndex][colIndex] = selectedColor;
 
     setLayers((currentLayers) =>
@@ -276,40 +284,28 @@ export const Editor: React.FC = () => {
     commandHistory.current.execute(fillCommand);
   };
 
-  const getMergedGrid = (): string[][] => {
-    const colorStacks: string[][][] = Array(gridSize)
-      .fill(null)
-      .map(() =>
-        Array(gridSize)
-          .fill(null)
-          .map(() => [])
-      );
+  const mergedGrid = useMemo(() => {
+    const stacks: string[][][] = Array.from({ length: gridSize }, () =>
+      Array.from({ length: gridSize }, () => [])
+    );
 
     for (const layer of layers) {
       if (!layer.visible || !layer.grid) continue;
 
-      for (let row = 0; row < gridSize; row++) {
-        if (!layer.grid[row]) continue;
+      for (let r = 0; r < gridSize; r++) {
+        const row = layer.grid[r];
+        if (!row) continue;
 
-        for (let col = 0; col < gridSize; col++) {
-          const cellColor = layer.grid[row]?.[col];
-
-          if (cellColor && cellColor !== "#222") {
-            colorStacks[row][col].push(cellColor);
-          }
+        for (let c = 0; c < gridSize; c++) {
+          const color = row[c];
+          if (!color || color === "transparent") continue;
+          stacks[r][c].push(color);
         }
       }
     }
 
-    return colorStacks.map((row) =>
-      row.map((stack) => {
-        if (!stack.length) return "#222";
-        if (stack.length === 1) return stack[0];
-
-        return mergeColorStack(stack);
-      })
-    );
-  };
+    return stacks.map((row) => row.map((stack) => mergeColorStack(stack)));
+  }, [layers, gridSize]);
 
   const handleColorSelect = (color: string): void => {
     const newColor: ColorItem = {
@@ -322,12 +318,13 @@ export const Editor: React.FC = () => {
 
   const handleClear = (): void => {
     const activeLayer = layers.find((layer) => layer.id === activeLayerId);
+
     if (!activeLayer) return;
 
     const previousGrid = deepCloneGrid(activeLayer.grid);
     const newGrid = Array(gridSize)
       .fill(null)
-      .map(() => Array(gridSize).fill("#222"));
+      .map(() => Array(gridSize).fill("transparent"));
 
     const clearCommand = new DrawCommand(
       activeLayerId,
@@ -429,7 +426,7 @@ export const Editor: React.FC = () => {
           {activeTool === "brush" ? (
             <Grid
               gridSize={gridSize}
-              grid={getMergedGrid()}
+              grid={mergedGrid}
               onMouseDown={handleMouseDown}
               onMouseEnter={handleMouseEnter}
               onMouseUp={handleMouseUp}

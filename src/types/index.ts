@@ -43,6 +43,7 @@ export interface Layer {
 }
 
 export interface Project {
+  name: string;
   colors: ColorItem[];
   gridSize: number;
   layers: Layer[];

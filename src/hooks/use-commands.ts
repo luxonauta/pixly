@@ -40,6 +40,7 @@ export const useCommands = (history: CommandHistory) => {
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyboardShortcuts);
+
     return () => {
       window.removeEventListener("keydown", handleKeyboardShortcuts);
     };

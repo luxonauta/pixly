@@ -42,7 +42,7 @@ export const TrackRow = ({
           <button
             key={`${track.id}-${i}`}
             type="button"
-            className={`${clsFor(v)} ${playing ? "playing" : ""}`}
+            className={`${clsFor(v)}${playing ? " playing" : ""}`}
             onClick={() => {
               const max = track.instrument === "noise" ? 1 : 4;
               const next = ((v + 1) % (max + 1)) as StepValue;
@@ -52,6 +52,7 @@ export const TrackRow = ({
               e.preventDefault();
               onChangeStep(track.id, i, 0);
             }}
+            aria-label={`Step ${i + 1}`}
           >
             {v === 0 ? "" : v}
           </button>

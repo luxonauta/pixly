@@ -31,6 +31,7 @@ export const Dialog = ({
     if (onConfirm) {
       onConfirm();
     }
+
     closeDialog();
   }, [onConfirm, closeDialog]);
 

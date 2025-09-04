@@ -108,16 +108,24 @@ export default function Composer() {
     []
   );
 
-  const canExport = useMemo(
-    () => typeof window !== "undefined" && !!window.AudioContext,
-    []
-  );
+  const canExport = useMemo(() => {
+    if (typeof window === "undefined") return false;
+
+    const w = window as unknown as {
+      AudioContext?: unknown;
+      webkitAudioContext?: unknown;
+    };
+    const hasAudio = !!(w.AudioContext || w.webkitAudioContext);
+
+    return hasAudio && !!engineRef.current && !!pattern?.tracks?.length;
+  }, [pattern]);
 
   const handleExportJSON = useCallback(() => {
     const blob = new Blob([JSON.stringify({ bpm, pattern }, null, 2)], {
       type: "application/json"
     });
     const a = document.createElement("a");
+
     a.href = URL.createObjectURL(blob);
     a.download = "chyp8-composition.json";
     a.click();
@@ -133,18 +141,32 @@ export default function Composer() {
   }, []);
 
   const handleRenderWav = useCallback(async () => {
-    const e = engineRef.current;
-    if (!e) return;
+    let e = engineRef.current;
+
+    if (!e) {
+      e = createEngine();
+      engineRef.current = e;
+    }
+
+    e.setTempo(bpm);
+    e.setPattern(pattern);
 
     const blob = await e.renderWav(bpm, 2);
     if (!blob) return;
 
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
+
+    a.href = url;
     a.download = "chyp8-render.wav";
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(a.href);
-  }, [bpm]);
+
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      a.remove();
+    }, 0);
+  }, [bpm, pattern]);
 
   return (
     <section id="composer" className="container">

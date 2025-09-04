@@ -1,17 +1,10 @@
 import { blendColors } from "./color-blend";
 
 export const mergeColorStack = (colorStack: string[]): string => {
-  if (colorStack.length === 0) {
-    console.info("Empty color stack. Returning white as default.");
-    return "#FFFFFF";
-  }
+  const stack = colorStack.filter((c) => c && c !== "transparent");
 
-  if (colorStack.length === 1) {
-    return colorStack[0];
-  }
+  if (stack.length === 0) return "transparent";
+  if (stack.length === 1) return stack[0];
 
-  return colorStack.reduce((bottomColor, topColor) => {
-    const blendedColor = blendColors(topColor, bottomColor);
-    return blendedColor;
-  });
+  return stack.reduce((bottom, top) => blendColors(top, bottom));
 };

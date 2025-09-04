@@ -5,9 +5,7 @@
 
 :root {
   --page-max-width: 957px;
-  --page-padding: 22px;
   --font-family: var(--font-departure-mono), monospace;
-
   --background-color: #222;
   --border-color: #6c6c58;
   --color: #ffa132;
@@ -21,8 +19,10 @@
 
 html {
   font-size: 100%;
+  text-size-adjust: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: none;
 
   &::selection {
     background-color: #000;
@@ -34,6 +34,9 @@ html {
 }
 
 body {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
   margin: 0;
   padding: 0;
   background-color: var(--background-color);
@@ -43,6 +46,11 @@ body {
   font-family: var(--font-family);
   font-variant-numeric: tabular-nums;
   text-transform: uppercase;
+}
+
+#root,
+#__next {
+  isolation: isolate;
 }
 
 h1,
@@ -66,7 +74,7 @@ small {
 }
 
 header {
-  padding: var(--page-padding);
+  padding: 44px 22px 22px;
 }
 
 main {
@@ -102,7 +110,7 @@ select {
     justify-items: unset;
   }
 
-  &:focus,
+  &:focus-visible,
   &:hover {
     border-color: var(--color);
   }
@@ -119,7 +127,7 @@ select {
 
 #composer {
   display: grid;
-  padding: var(--page-padding);
+  padding: 22px;
   gap: 11px;
   border: 1px dashed var(--border-color);
 
@@ -258,7 +266,7 @@ select {
             border-right: none;
           }
 
-          &:focus,
+          &:focus-visible,
           &:hover {
             border-color: var(--border-color);
 
@@ -284,7 +292,7 @@ select {
 #editor {
   display: grid;
   margin-bottom: 22px;
-  padding: var(--page-padding);
+  padding: 22px;
   gap: 22px;
   border: 1px dashed var(--border-color);
 
@@ -370,7 +378,7 @@ select {
           pointer-events: none;
         }
 
-        &:focus,
+        &:focus-visible,
         &:hover {
           &::after {
             opacity: 1;
@@ -483,10 +491,16 @@ select {
         .move-buttons button,
         .visibility-toggle,
         .delete-button {
+          aspect-ratio: 1 / 1;
           color: var(--color-muted);
 
           svg {
             pointer-events: none;
+          }
+
+          &:focus-visible,
+          &:hover {
+            color: var(--color);
           }
         }
 
@@ -532,12 +546,15 @@ select {
       display: grid;
       aspect-ratio: 1 / 1;
       overflow: hidden;
-      gap: 1px;
       border: 1px solid var(--border-color);
-      background-color: var(--border-color);
+      background-color: var(--background-color);
 
       .cell {
         position: relative;
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        border-width: 0.5px;
         cursor: cell;
 
         &::after {
@@ -549,7 +566,7 @@ select {
           pointer-events: none;
         }
 
-        &:focus,
+        &:focus-visible,
         &:hover {
           &::after {
             opacity: 1;

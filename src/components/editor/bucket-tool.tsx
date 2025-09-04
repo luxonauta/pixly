@@ -1,3 +1,5 @@
+import { Grid } from "./grid";
+
 interface Point {
   row: number;
   col: number;
@@ -10,102 +12,57 @@ interface BucketToolProps {
   onFill: (newGrid: string[][]) => void;
 }
 
-const isInBounds = (point: Point, gridSize: number): boolean => {
-  return (
-    point.row >= 0 &&
-    point.row < gridSize &&
-    point.col >= 0 &&
-    point.col < gridSize
-  );
-};
+const keyOf = (r: number, c: number) => `${r}-${c}`;
 
-const floodFill = (
-  grid: string[][],
-  start: Point,
-  targetColor: string,
-  replacementColor: string
-): string[][] => {
-  if (targetColor === replacementColor) return grid;
-
-  if (grid[start.row][start.col] !== targetColor) return grid;
-
-  const result = grid.map((row) => [...row]);
-  const stack: Point[] = [start];
-
-  const directions = [
-    { row: -1, col: 0 },
-    { row: 1, col: 0 },
-    { row: 0, col: -1 },
-    { row: 0, col: 1 }
-  ];
-
-  while (stack.length > 0) {
-    const current = stack.pop();
-    if (!current) continue;
-
-    if (result[current.row][current.col] !== targetColor) continue;
-    result[current.row][current.col] = replacementColor;
-
-    for (const dir of directions) {
-      const next: Point = {
-        row: current.row + dir.row,
-        col: current.col + dir.col
-      };
-
-      if (
-        isInBounds(next, grid.length) &&
-        result[next.row][next.col] === targetColor
-      ) {
-        stack.push(next);
-      }
-    }
-  }
-
-  return result;
-};
-
-export const BucketTool: React.FC<BucketToolProps> = ({
+export const BucketTool = ({
   grid,
   selectedColor,
   gridSize,
   onFill
-}) => {
-  const handleCellClick = (rowIndex: number, colIndex: number) => {
-    const targetColor = grid[rowIndex][colIndex];
-    const newGrid = floodFill(
-      grid,
-      { row: rowIndex, col: colIndex },
-      targetColor,
-      selectedColor
-    );
+}: BucketToolProps) => {
+  const fillAt = (row: number, col: number) => {
+    const target = grid[row]?.[col];
+    if (target === undefined || target === selectedColor) return;
+
+    const newGrid = grid.map((r) => r.slice());
+    const stack: Point[] = [{ row, col }];
+    const seen = new Set<string>();
+
+    while (stack.length) {
+      const p = stack.pop() as Point;
+      if (
+        p.row < 0 ||
+        p.row >= gridSize ||
+        p.col < 0 ||
+        p.col >= gridSize ||
+        seen.has(keyOf(p.row, p.col))
+      ) {
+        continue;
+      }
+
+      if (newGrid[p.row][p.col] !== target) {
+        continue;
+      }
+
+      newGrid[p.row][p.col] = selectedColor;
+      seen.add(keyOf(p.row, p.col));
+
+      stack.push({ row: p.row + 1, col: p.col });
+      stack.push({ row: p.row - 1, col: p.col });
+      stack.push({ row: p.row, col: p.col + 1 });
+      stack.push({ row: p.row, col: p.col - 1 });
+    }
+
     onFill(newGrid);
   };
 
   return (
-    <div className="art-grid">
-      <div
-        style={{
-          gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`
-        }}
-      >
-        {grid.map((row, rowIndex) =>
-          row.map((cellColor, colIndex) => (
-            <div
-              key={`${rowIndex}-${colIndex}-${cellColor}`}
-              onClick={() => handleCellClick(rowIndex, colIndex)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  handleCellClick(rowIndex, colIndex);
-                }
-              }}
-              className="cell"
-              style={{
-                backgroundColor: cellColor
-              }}
-            />
-          ))
-        )}
-      </div>
-    </div>
+    <Grid
+      grid={grid}
+      gridSize={gridSize}
+      onMouseDown={fillAt}
+      onMouseEnter={() => {}}
+      onMouseUp={() => {}}
+    />
   );
 };

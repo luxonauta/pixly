@@ -37,20 +37,36 @@ const LayerItem = ({
 }: LayerItemProps) => (
   <div className={`item${isActive ? " active" : ""}`}>
     <div className="move-buttons">
-      <button type="button" onClick={onMoveUp} disabled={isFirst}>
+      <button
+        type="button"
+        onClick={onMoveUp}
+        disabled={isFirst}
+        aria-label="Move layer up"
+      >
         ▲
       </button>
-      <button type="button" onClick={onMoveDown} disabled={isLast}>
+      <button
+        type="button"
+        onClick={onMoveDown}
+        disabled={isLast}
+        aria-label="Move layer down"
+      >
         ▼
       </button>
     </div>
-    <button type="button" onClick={onClick} className="label">
+    <button
+      type="button"
+      onClick={onClick}
+      className="label"
+      aria-label={`Select layer ${Number.parseInt(layer.id.split("-")[1])}`}
+    >
       Layer {Number.parseInt(layer.id.split("-")[1])}
     </button>
     <button
       type="button"
       onClick={onVisibilityToggle}
       className="visibility-toggle"
+      aria-label={layer.visible ? "Hide layer" : "Show layer"}
     >
       {layer.visible ? (
         <svg
@@ -81,7 +97,12 @@ const LayerItem = ({
         </svg>
       )}
     </button>
-    <button type="button" onClick={onDelete} className="delete-button">
+    <button
+      type="button"
+      onClick={onDelete}
+      className="delete-button"
+      aria-label="Delete layer"
+    >
       <svg
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
